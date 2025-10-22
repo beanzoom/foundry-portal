@@ -75,8 +75,10 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string } | null>(null);
   
   // Check if we're on subdomain to determine path prefix
-  const isSubdomain = window.location.hostname === 'portal.localhost' || 
-                     window.location.hostname.startsWith('portal.');
+  const hostname = window.location.hostname;
+  const isSubdomain = hostname === 'portal.localhost' ||
+                     hostname.startsWith('portal.') ||
+                     hostname.includes('vercel.app');
   const pathPrefix = isSubdomain ? '' : '/portal';
 
   // Check if user is admin/investor using centralized role checking
