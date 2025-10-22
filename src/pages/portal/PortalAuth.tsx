@@ -52,10 +52,13 @@ export function PortalAuth() {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>(referralCode ? 'signup' : 'signup'); // Default to signup
   
   // If user is on subdomain, adjust the redirect path
-  const isSubdomain = window.location.hostname === 'portal.localhost' || 
-                     window.location.hostname.startsWith('portal.');
-  const adjustedRedirect = isSubdomain && redirect.startsWith('/portal') 
-    ? redirect.replace('/portal', '') 
+  const hostname = window.location.hostname;
+  const isVercelPreview = hostname.includes('vercel.app');
+  const isSubdomain = hostname === 'portal.localhost' ||
+                     hostname.startsWith('portal.') ||
+                     isVercelPreview;
+  const adjustedRedirect = isSubdomain && redirect.startsWith('/portal')
+    ? redirect.replace('/portal', '')
     : redirect;
 
   // Redirect if already logged in
