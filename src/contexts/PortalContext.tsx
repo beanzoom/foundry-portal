@@ -42,11 +42,14 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     
     // Check if we're on portal subdomain OR accessing portal routes
     // BUT exclude other subdomains like foundry.fleetdrms.com
+    // Also treat Vercel preview URLs as portal
     const hostname = window.location.hostname;
     const pathname = window.location.pathname;
+    const isVercelPreview = hostname.includes('vercel.app');
     const isPortalSubdomain = hostname === 'portal.fleetdrms.com' ||
                               hostname === 'portal.localhost' ||
-                              (hostname.startsWith('portal.') && !hostname.startsWith('foundry.'));
+                              (hostname.startsWith('portal.') && !hostname.startsWith('foundry.')) ||
+                              isVercelPreview;
     const portalCheck = isPortalSubdomain ||
                        pathname.startsWith('/portal'); // Also check if we're on portal routes
     

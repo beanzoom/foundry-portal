@@ -137,9 +137,12 @@ export function PortalRoutes() {
   // VERSION MARKER - Update this when making changes to verify deployment
   
   // Check if we're on subdomain or path-based portal (NOT other subdomains like foundry)
-  const isSubdomain = window.location.hostname === 'portal.localhost' ||
-                     (window.location.hostname.startsWith('portal.') &&
-                      !window.location.hostname.startsWith('foundry.'));
+  // Also treat Vercel preview URLs as portal subdomains
+  const hostname = window.location.hostname;
+  const isVercelPreview = hostname.includes('vercel.app');
+  const isSubdomain = hostname === 'portal.localhost' ||
+                     (hostname.startsWith('portal.') && !hostname.startsWith('foundry.')) ||
+                     isVercelPreview;
   
   // IMPORTANT: Consider this a portal route if:
   // 1. We're on the portal subdomain, OR
