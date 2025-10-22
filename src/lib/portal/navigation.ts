@@ -4,11 +4,13 @@
  */
 
 /**
- * Check if we're on a portal subdomain
+ * Check if we're on a portal subdomain (including Vercel preview URLs)
  */
 export function isPortalSubdomain(): boolean {
-  return window.location.hostname === 'portal.localhost' ||
-         window.location.hostname.startsWith('portal.');
+  const hostname = window.location.hostname;
+  return hostname === 'portal.localhost' ||
+         hostname.startsWith('portal.') ||
+         hostname.includes('vercel.app');
 }
 
 /**
