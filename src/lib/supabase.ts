@@ -2,8 +2,12 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
-const supabaseUrl = "https://kssbljbxapejckgassgf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzc2JsamJ4YXBlamNrZ2Fzc2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk4OTIwOTYsImV4cCI6MjA1NTQ2ODA5Nn0.GaMolqo-Anbj8BO51Aw7hXfJU1aeeCOhTeIffBk83GM";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.');
+}
 
 // Initialize Supabase client with explicit session persistence and better retry options
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
