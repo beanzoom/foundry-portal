@@ -1,8 +1,9 @@
 # Claude Code Handoff - Foundry Portal
 
 **Date Created:** October 21, 2025
+**Last Updated:** October 22, 2025
 **Repository:** `/home/joeylutes/projects/foundry-portal`
-**Status:** Phase 2 Complete - Portal is standalone and functional
+**Status:** Phase 5 (Testing) - Portal deployed to Vercel and functional
 
 ---
 
@@ -352,17 +353,31 @@ if (isAdminRole(portalUser?.role)) {
 - Development server running
 - Portal loads successfully
 
-### ⏭️ Next Steps (Future Work)
-- Test all portal features thoroughly
-- Replace demo placeholders with portal-specific demos (optional)
-- Deploy to Vercel
-- Configure custom domain
-- Set up monitoring and analytics
+### ✅ Vercel Deployment (October 22, 2025)
+- Portal successfully deployed to Vercel
+- Preview URL: `foundry-portal-eta.vercel.app`
+- Fixed routing issues for Vercel preview URLs
+- All navigation working correctly
+- Environment variables configured
+
+### ⏭️ Next Steps (Phase 5-6)
+- ✅ Deploy to Vercel (COMPLETE)
+- ⏳ Test all portal features on Vercel
+- ⏳ Test email functionality
+- ⏳ Configure custom domain `portal.fleetdrms.com`
+- ⏳ Update DNS to point to Vercel
+- ⏳ Production rollout
+
+### 🚧 Known Issues Fixed (October 22, 2025)
+- ✅ Fixed routing for Vercel preview URLs - all components now recognize `vercel.app` as subdomain
+- ✅ Fixed navigation links - removed hardcoded `/portal` prefix
+- ✅ Fixed investment portal calculator links
+- ✅ Fixed post-login redirect to use correct path
 
 ### 🚧 Known Limitations
 - Demo features show placeholders (FeatureExplorer, DocViewer diagrams)
-- Some portal features may need testing
-- Vercel deployment not yet configured
+- Some admin pages still have hardcoded navigate() calls (low priority)
+- Email functionality needs testing on Vercel
 
 ---
 
