@@ -19,6 +19,14 @@ window.addEventListener('error', (e) => {
 console.log('Portal app starting...');
 console.log('Environment:', import.meta.env.MODE);
 console.log('Supabase URL configured:', !!import.meta.env.VITE_SUPABASE_URL);
+console.log('Hostname:', window.location.hostname);
+console.log('Pathname:', window.location.pathname);
+
+// Temporary test: add visible text to body to verify JS is executing
+const testDiv = document.createElement('div');
+testDiv.style.cssText = 'position: fixed; top: 0; left: 0; background: red; color: white; padding: 20px; z-index: 9999;';
+testDiv.textContent = `JS LOADED - Hostname: ${window.location.hostname}, Path: ${window.location.pathname}`;
+document.body.appendChild(testDiv);
 
 // Configure the logger
 configureLogger({
