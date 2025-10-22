@@ -44,25 +44,46 @@ describe('Portal Surveys Integration Tests', () => {
     if (data?.id) testSurveyIds.push(data.id);
   }, TEST_TIMEOUT);
 
-  it('should publish a survey', async () => {
+  it('should queue email notification when published (then cleanup)', async () => {
     const { data: survey } = await adminClient.from('portal_surveys').insert({
-      title: 'Publish Test',
-      description: 'Publish test',
+      title: 'Test Survey Email Notification',
+      description: 'Testing email queuing',
       status: 'draft',
       is_active: false
     }).select().single();
 
     if (survey?.id) testSurveyIds.push(survey.id);
 
-    const { data: published, error } = await adminClient.from('portal_surveys').update({
+    // Publish survey - this WILL queue emails to portal@fleetdrms.com
+    const { data: updated, error } = await adminClient.from('portal_surveys').update({
       status: 'published',
       is_active: true,
       published_at: new Date().toISOString()
     }).eq('id', survey!.id).select().single();
 
     expect(error).toBeNull();
-    expect(published?.status).toBe('published');
-    expect(published?.is_active).toBe(true);
+    expect(updated?.status).toBe('published');
+
+    // Wait for trigger to fire
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Verify email was queued to portal@fleetdrms.com
+    const { data: queuedEmails } = await adminClient
+      .from('email_queue')
+      .select('*')
+      .eq('to_email', 'portal@fleetdrms.com')
+      .eq('event_type', 'survey_published')
+      .gte('created_at', new Date(Date.now() - 5000).toISOString());
+
+    expect(queuedEmails).toBeTruthy();
+    expect(queuedEmails!.length).toBeGreaterThan(0);
+
+    // CRITICAL: Delete queued emails before test ends
+    if (queuedEmails && queuedEmails.length > 0) {
+      const emailIds = queuedEmails.map(e => e.id);
+      await adminClient.from('email_queue').delete().in('id', emailIds);
+      console.log(`Cleaned up ${emailIds.length} test emails from queue`);
+    }
   }, TEST_TIMEOUT);
 
   it('should support due dates', async () => {
@@ -71,8 +92,8 @@ describe('Portal Surveys Integration Tests', () => {
     const { data, error } = await adminClient.from('portal_surveys').insert({
       title: 'Survey with Due Date',
       description: 'Has deadline',
-      status: 'published',
-      is_active: true,
+      status: 'draft', // DRAFT - never publish in tests
+      is_active: false,
       due_date: dueDate.toISOString()
     }).select().single();
 

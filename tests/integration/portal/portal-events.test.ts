@@ -49,12 +49,12 @@ describe('Portal Events Integration Tests', () => {
     if (data?.id) testEventIds.push(data.id);
   }, TEST_TIMEOUT);
 
-  it('should publish an event', async () => {
+  it('should queue email notification when published (then cleanup)', async () => {
     const futureDate = new Date(Date.now() + 86400000 * 30);
 
     const { data: event } = await adminClient.from('portal_events').insert({
-      title: 'Publish Test Event',
-      description: 'Publish test',
+      title: 'Test Event Email Notification',
+      description: 'Testing email queuing',
       event_date: futureDate.toISOString(),
       location: 'Test Location',
       status: 'draft',
@@ -63,7 +63,8 @@ describe('Portal Events Integration Tests', () => {
 
     if (event?.id) testEventIds.push(event.id);
 
-    const { data: published, error } = await adminClient.from('portal_events').update({
+    // Publish event - this WILL queue emails to portal@fleetdrms.com
+    const { data: updated, error } = await adminClient.from('portal_events').update({
       status: 'published',
       is_active: true,
       registration_open: true,
@@ -71,8 +72,28 @@ describe('Portal Events Integration Tests', () => {
     }).eq('id', event!.id).select().single();
 
     expect(error).toBeNull();
-    expect(published?.status).toBe('published');
-    expect(published?.is_active).toBe(true);
+    expect(updated?.status).toBe('published');
+
+    // Wait for trigger to fire
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Verify email was queued to portal@fleetdrms.com
+    const { data: queuedEmails } = await adminClient
+      .from('email_queue')
+      .select('*')
+      .eq('to_email', 'portal@fleetdrms.com')
+      .eq('event_type', 'event_published')
+      .gte('created_at', new Date(Date.now() - 5000).toISOString());
+
+    expect(queuedEmails).toBeTruthy();
+    expect(queuedEmails!.length).toBeGreaterThan(0);
+
+    // CRITICAL: Delete queued emails before test ends
+    if (queuedEmails && queuedEmails.length > 0) {
+      const emailIds = queuedEmails.map(e => e.id);
+      await adminClient.from('email_queue').delete().in('id', emailIds);
+      console.log(`Cleaned up ${emailIds.length} test emails from queue`);
+    }
   }, TEST_TIMEOUT);
 
   it('should support registration limits', async () => {
@@ -83,8 +104,8 @@ describe('Portal Events Integration Tests', () => {
       description: 'Limited seats',
       event_date: futureDate.toISOString(),
       location: 'Test Location',
-      status: 'published',
-      is_active: true,
+      status: 'draft', // DRAFT - never publish in tests
+      is_active: false,
       registration_limit: 50,
       registration_required: true
     }).select().single();
