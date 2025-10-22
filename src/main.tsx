@@ -5,6 +5,20 @@ import App from './App.tsx';
 import './index.css';
 import { configureLogger } from './lib/logging.ts';
 
+// Add global error handler to catch startup errors
+window.addEventListener('error', (e) => {
+  console.error('Global error:', e.error);
+  document.body.innerHTML = `<div style="padding: 20px; font-family: monospace;">
+    <h1>Error loading application</h1>
+    <pre>${e.error?.message || e.message}</pre>
+    <pre>${e.error?.stack || ''}</pre>
+  </div>`;
+});
+
+console.log('Portal app starting...');
+console.log('Environment:', import.meta.env.MODE);
+console.log('Supabase URL configured:', !!import.meta.env.VITE_SUPABASE_URL);
+
 // Configure the logger
 configureLogger({
   enabled: import.meta.env.MODE === 'development',
