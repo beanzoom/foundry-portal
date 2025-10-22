@@ -1,92 +1,49 @@
--- Debug Query: Check Referral Email Configuration
+-- Debug Query: Check Referral Email Configuration (FIXED)
 -- Run this in Supabase SQL Editor to diagnose the wrong email issue
 -- Date: 2025-10-22
 
 -- =====================================================
--- PART 1: Check Notification Rules for Referrals
+-- PART 1: Check Notification Rules Table Structure
 -- =====================================================
 
-SELECT
-    nr.id,
-    nr.event_id,
-    nr.rule_name,
-    nr.template_id,
-    et.template_name,
-    et.subject,
-    nr.enabled,
-    nr.created_at
-FROM notification_rules nr
-LEFT JOIN email_templates et ON et.id = nr.template_id
-WHERE nr.event_id LIKE '%referral%'
-   OR nr.rule_name LIKE '%referral%'
-ORDER BY nr.created_at DESC;
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'notification_rules'
+  AND table_schema = 'public'
+ORDER BY ordinal_position;
 
 -- =====================================================
--- PART 2: Check ALL Active Notification Rules
+-- PART 2: Check ALL Notification Rules
 -- =====================================================
 
-SELECT
-    nr.id,
-    nr.event_id,
-    nr.rule_name,
-    nr.template_id,
-    et.template_name,
-    et.subject,
-    nr.enabled
-FROM notification_rules nr
-LEFT JOIN email_templates et ON et.id = nr.template_id
-WHERE nr.enabled = true
-ORDER BY nr.event_id;
+SELECT *
+FROM notification_rules
+ORDER BY created_at DESC;
 
 -- =====================================================
--- PART 3: Check Email Templates
+-- PART 3: Check ALL Email Templates
 -- =====================================================
 
-SELECT
-    id,
-    template_name,
-    subject,
-    created_at,
-    updated_at
+SELECT *
 FROM email_templates
-WHERE template_name LIKE '%referral%'
-   OR template_name LIKE '%Test%'
-   OR subject LIKE '%Test%'
 ORDER BY created_at DESC;
 
 -- =====================================================
 -- PART 4: Check Recent Email Queue Entries
 -- =====================================================
 
-SELECT
-    eq.id,
-    eq.to_email,
-    eq.subject,
-    eq.template_id,
-    et.template_name,
-    eq.status,
-    eq.created_at,
-    eq.sent_at
-FROM email_queue eq
-LEFT JOIN email_templates et ON et.id = eq.template_id
-ORDER BY eq.created_at DESC
+SELECT *
+FROM email_queue
+ORDER BY created_at DESC
 LIMIT 10;
 
 -- =====================================================
--- PART 5: Check Your Most Recent Referral
+-- PART 5: Check Your Most Recent Referrals
 -- =====================================================
 
-SELECT
-    pr.id,
-    pr.referee_email,
-    pr.referee_first_name,
-    pr.referee_last_name,
-    pr.referral_code,
-    pr.status,
-    pr.invitation_sent_at,
-    pr.created_at
-FROM portal_referrals pr
-ORDER BY pr.created_at DESC
+SELECT *
+FROM portal_referrals
+ORDER BY created_at DESC
 LIMIT 5;
 
 -- =====================================================
@@ -94,13 +51,16 @@ LIMIT 5;
 -- =====================================================
 
 /*
-Run each query above and paste the results here.
+Run this entire query in Supabase SQL Editor.
 
-We're looking for:
-1. Is there a notification rule for 'referral_created' event?
-2. What template is mapped to that rule?
-3. Are there multiple rules accidentally enabled?
-4. What email was actually sent (check email_queue)?
+We need to see:
+1. What columns exist in notification_rules table
+2. All notification rules (to find the referral_created rule)
+3. All email templates (to find which template IDs exist)
+4. Recent emails sent (to see which template was actually used)
+5. Your recent referrals
 
 This will help us identify why you got "Publish Test Event" instead of referral email.
+
+Just run the whole thing and paste ALL the results back.
 */
