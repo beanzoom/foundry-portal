@@ -46,17 +46,22 @@ export function PortalAuth() {
   const message = searchParams.get('message');
   const referralCode = searchParams.get('ref');
   const campaign = searchParams.get('campaign');
-  const redirect = searchParams.get('redirect') || '/portal/dashboard';
 
   // Determine default tab based on referral code presence
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>(referralCode ? 'signup' : 'signup'); // Default to signup
-  
-  // If user is on subdomain, adjust the redirect path
+
+  // Check if we're on subdomain/Vercel preview
   const hostname = window.location.hostname;
   const isVercelPreview = hostname.includes('vercel.app');
   const isSubdomain = hostname === 'portal.localhost' ||
                      hostname.startsWith('portal.') ||
                      isVercelPreview;
+
+  // Set default redirect based on subdomain or path-based routing
+  const defaultRedirect = isSubdomain ? '/dashboard' : '/portal/dashboard';
+  const redirect = searchParams.get('redirect') || defaultRedirect;
+
+  // Adjust redirect path if needed
   const adjustedRedirect = isSubdomain && redirect.startsWith('/portal')
     ? redirect.replace('/portal', '')
     : redirect;
