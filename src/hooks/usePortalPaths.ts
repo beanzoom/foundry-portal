@@ -5,8 +5,10 @@ import { useMemo } from 'react';
  */
 export function usePortalPaths() {
   const isSubdomain = useMemo(() => {
-    return window.location.hostname === 'portal.localhost' || 
-           window.location.hostname.startsWith('portal.');
+    const hostname = window.location.hostname;
+    return hostname === 'portal.localhost' ||
+           hostname.startsWith('portal.') ||
+           hostname.includes('vercel.app');
   }, []);
   
   const pathPrefix = isSubdomain ? '' : '/portal';

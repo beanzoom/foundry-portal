@@ -21,8 +21,10 @@ import { TrendingUp, Calendar, DollarSign, AlertCircle, Target, Info } from 'luc
 import { MARKET_DATA, PRICING_TIERS, COMPANY_METRICS } from '@/lib/portal/investmentConstants';
 
 export function GrowthProjectionsCalculator() {
-  const pathPrefix = window.location.hostname === 'portal.localhost' ||
-                     window.location.hostname.startsWith('portal.') ? '' : '/portal';
+  const hostname = window.location.hostname;
+  const pathPrefix = hostname === 'portal.localhost' ||
+                     hostname.startsWith('portal.') ||
+                     hostname.includes('vercel.app') ? '' : '/portal';
 
   // State for calculator inputs
   const [launchMonth, setLaunchMonth] = useState(COMPANY_METRICS.pilots.launchMonth);

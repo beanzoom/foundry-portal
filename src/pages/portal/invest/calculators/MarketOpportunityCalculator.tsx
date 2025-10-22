@@ -8,8 +8,10 @@ import { TrendingUp, Users, DollarSign, Target, Info } from 'lucide-react';
 import { MARKET_DATA, PRICING_TIERS } from '@/lib/portal/investmentConstants';
 
 export function MarketOpportunityCalculator() {
-  const pathPrefix = window.location.hostname === 'portal.localhost' ||
-                     window.location.hostname.startsWith('portal.') ? '' : '/portal';
+  const hostname = window.location.hostname;
+  const pathPrefix = hostname === 'portal.localhost' ||
+                     hostname.startsWith('portal.') ||
+                     hostname.includes('vercel.app') ? '' : '/portal';
 
   // State for calculator inputs
   const [marketPenetration, setMarketPenetration] = useState(2); // percentage

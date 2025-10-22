@@ -4,8 +4,10 @@ import { TrendingUp, Map, DollarSign, FileText, ArrowRight, Target, LineChart, S
 import { Link } from 'react-router-dom';
 
 export function PortalInvest() {
-  const pathPrefix = window.location.hostname === 'portal.localhost' ||
-                     window.location.hostname.startsWith('portal.') ? '' : '/portal';
+  const hostname = window.location.hostname;
+  const pathPrefix = hostname === 'portal.localhost' ||
+                     hostname.startsWith('portal.') ||
+                     hostname.includes('vercel.app') ? '' : '/portal';
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
