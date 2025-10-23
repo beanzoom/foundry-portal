@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { triggerPublishNotification } from '@/services/portal-notifications.service';
 import { createLogger } from '@/lib/logging';
 import { supabase } from '@/lib/supabase';
+import { PublishConfirmDialog } from '@/components/portal/admin/notifications/PublishConfirmDialog';
 
 const logger = createLogger('EventsAdminDashboard');
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -47,6 +48,10 @@ export function EventsAdminDashboard() {
   const [selectedEvent, setSelectedEvent] = useState<PortalEvent | null>(null);
   const [analytics, setAnalytics] = useState<EventAnalytics | null>(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [eventToPublish, setEventToPublish] = useState<{id: string; title: string} | null>(null);
+  const [recipientListName, setRecipientListName] = useState<string>('');
+  const [templateName, setTemplateName] = useState<string>('');
 
   useEffect(() => {
     loadEvents();
@@ -79,6 +84,48 @@ export function EventsAdminDashboard() {
     }
   };
 
+  const handleOpenPublishDialog = async (eventId: string, eventTitle: string) => {
+    try {
+      // Get the notification rule and template info for events
+      const { data: notificationRule, error: ruleError } = await supabase
+        .from('notification_rules')
+        .select('recipient_list_id, template_id')
+        .eq('event_id', 'event_published')
+        .eq('enabled', true)
+        .single();
+
+      if (!ruleError && notificationRule) {
+        // Get recipient list name
+        const { data: recipientList } = await supabase
+          .from('recipient_lists')
+          .select('name')
+          .eq('id', notificationRule.recipient_list_id)
+          .single();
+
+        // Get template name
+        const { data: template } = await supabase
+          .from('email_templates')
+          .select('name')
+          .eq('id', notificationRule.template_id)
+          .single();
+
+        setRecipientListName(recipientList?.name || 'Unknown');
+        setTemplateName(template?.name || 'Unknown');
+      }
+
+      setEventToPublish({ id: eventId, title: eventTitle });
+      setPublishDialogOpen(true);
+
+    } catch (error) {
+      logger.error('Error opening publish dialog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare publish dialog",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleStatusChange = async (eventId: string, newStatus: string) => {
     try {
       const event = events.find(e => e.id === eventId);
@@ -86,98 +133,20 @@ export function EventsAdminDashboard() {
         throw new Error('Event not found');
       }
 
-      // If publishing, get recipient information for confirmation
+      // If publishing, open the new publish dialog instead
       if (newStatus === 'published') {
-        // Get the notification rule for event_published to find the recipient list
-        const { data: notificationRule, error: ruleError } = await supabase
-          .from('notification_rules')
-          .select('recipient_list_id')
-          .eq('event_id', 'event_published')
-          .eq('enabled', true)
-          .single();
-
-        let recipientDescription = 'portal users';
-        let recipientCount = 0;
-
-        if (!ruleError && notificationRule?.recipient_list_id) {
-          // Get the recipient list details
-          const { data: recipientList, error: listError } = await supabase
-            .from('recipient_lists')
-            .select('name, type, config')
-            .eq('id', notificationRule.recipient_list_id)
-            .single();
-
-          if (!listError && recipientList) {
-            recipientDescription = recipientList.name;
-
-            // Try to get actual count based on list type
-            if (recipientList.type === 'static' && recipientList.config?.emails) {
-              recipientCount = recipientList.config.emails.length;
-            } else if (recipientList.type === 'role_based') {
-              // For role-based lists, get count of users with those roles
-              const roles = recipientList.config?.roles || [];
-
-              // Build role filter - match any role in the recipient list config
-              const { count } = await supabase
-                .from('profiles')
-                .select('*', { count: 'exact', head: true })
-                .in('role', roles)
-                .eq('email_events', true);
-              recipientCount = count || 0;
-            } else if (recipientList.type === 'dynamic') {
-              // Dynamic recipients determined at runtime
-              recipientDescription = `${recipientList.name} (determined at send time)`;
-            }
-          }
-        }
-
-        // Show confirmation dialog
-        const confirmMessage = recipientCount > 0
-          ? `This will publish the event "${event.title}" and send email notifications to ${recipientCount} ${recipientDescription}.\n\nContinue?`
-          : `This will publish the event "${event.title}" and send email notifications to ${recipientDescription}.\n\nContinue?`;
-        const confirmed = window.confirm(confirmMessage);
-
-        if (!confirmed) return;
+        await handleOpenPublishDialog(eventId, event.title);
+        return;
       }
 
+      // For unpublish/other status changes, proceed directly
       await PortalEventsService.updateEventStatus(eventId, newStatus);
       const action = newStatus === 'published' ? 'published' : 'unpublished';
 
-      // If publishing, trigger email notifications (exactly like Updates)
-      if (newStatus === 'published') {
-        // Trigger email notifications (database trigger handles batch creation)
-        const result = await triggerPublishNotification('event', eventId, {
-          metadata: {
-            event_title: event?.title,
-            event_date: event?.date,
-            force_process: true  // Force processing even if batch exists
-          }
-        });
-
-        // Show success message based on result
-        if (result.success && result.recipientCount && result.recipientCount > 0) {
-          toast({
-            title: 'Success',
-            description: `Event published and notifications sent to ${result.recipientCount} users.`
-          });
-        } else if (result.success) {
-          toast({
-            title: 'Event Published',
-            description: 'Event published successfully (no email recipients configured).'
-          });
-        } else {
-          toast({
-            title: 'Warning',
-            description: 'Event published but email notifications may not have been sent.',
-            variant: 'default'
-          });
-        }
-      } else {
-        toast({
-          title: 'Success',
-          description: `Event ${action} successfully`
-        });
-      }
+      toast({
+        title: 'Success',
+        description: `Event ${action} successfully`
+      });
 
       loadEvents();
     } catch (error) {
@@ -553,6 +522,47 @@ export function EventsAdminDashboard() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Publish Confirm Dialog */}
+      {eventToPublish && (
+        <PublishConfirmDialog
+          open={publishDialogOpen}
+          onOpenChange={(open) => {
+            setPublishDialogOpen(open);
+            if (!open) {
+              setEventToPublish(null);
+              loadEvents(); // Refresh list after publish
+            }
+          }}
+          contentType="event"
+          contentId={eventToPublish.id}
+          contentTitle={eventToPublish.title}
+          templateName={templateName}
+          recipientListName={recipientListName}
+          onConfirm={async () => {
+            const { error } = await supabase
+              .from('portal_events')
+              .update({
+                status: 'published',
+                is_active: true,
+                published_at: new Date().toISOString()
+              })
+              .eq('id', eventToPublish.id);
+
+            if (error) {
+              logger.error('Error publishing event:', error);
+              throw error;
+            }
+            logger.info('Event published successfully');
+          }}
+          onCancel={() => {
+            setEventToPublish(null);
+            setPublishDialogOpen(false);
+            setRecipientListName('');
+            setTemplateName('');
+          }}
+        />
       )}
     </div>
   );
