@@ -231,8 +231,10 @@ export function EventsAdminDashboard() {
           <p className="text-muted-foreground">Manage portal events and registrations</p>
         </div>
         <Button onClick={() => {
-          const isSubdomain = window.location.hostname === 'portal.localhost' || 
-                             window.location.hostname.startsWith('portal.');
+          const hostname = window.location.hostname;
+          const isSubdomain = hostname === 'portal.localhost' ||
+                             hostname.startsWith('portal.') ||
+                             hostname.includes('vercel.app');
           const path = isSubdomain ? '/admin/events/new' : '/portal/admin/events/new';
           navigate(path);
         }}>
@@ -368,8 +370,10 @@ export function EventsAdminDashboard() {
                       <DropdownMenuContent align="end">
                         {/* View/Preview - Always available */}
                         <DropdownMenuItem onClick={() => {
-                          const isSubdomain = window.location.hostname === 'portal.localhost' ||
-                                             window.location.hostname.startsWith('portal.');
+                          const hostname = window.location.hostname;
+                          const isSubdomain = hostname === 'portal.localhost' ||
+                                             hostname.startsWith('portal.') ||
+                                             hostname.includes('vercel.app');
                           const path = isSubdomain ? `/events/${event.id}` : `/portal/events/${event.id}`;
                           navigate(path);
                         }}>
@@ -381,8 +385,10 @@ export function EventsAdminDashboard() {
                         {event.status === 'draft' && (
                           <>
                             <DropdownMenuItem onClick={() => {
-                              const isSubdomain = window.location.hostname === 'portal.localhost' ||
-                                                 window.location.hostname.startsWith('portal.');
+                              const hostname = window.location.hostname;
+                              const isSubdomain = hostname === 'portal.localhost' ||
+                                                 hostname.startsWith('portal.') ||
+                                                 hostname.includes('vercel.app');
                               const path = isSubdomain ? `/admin/events/${event.id}/edit` : `/portal/admin/events/${event.id}/edit`;
                               navigate(path);
                             }}>
@@ -418,8 +424,10 @@ export function EventsAdminDashboard() {
                               View Analytics
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => {
-                              const isSubdomain = window.location.hostname === 'portal.localhost' ||
-                                                 window.location.hostname.startsWith('portal.');
+                              const hostname = window.location.hostname;
+                              const isSubdomain = hostname === 'portal.localhost' ||
+                                                 hostname.startsWith('portal.') ||
+                                                 hostname.includes('vercel.app');
                               const path = isSubdomain ? `/admin/events/${event.id}/edit` : `/portal/admin/events/${event.id}/edit`;
                               navigate(path);
                             }}>

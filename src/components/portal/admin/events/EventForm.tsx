@@ -80,7 +80,11 @@ export function EventForm() {
         title: 'Error',
         description: 'Failed to load event'
       });
-      navigate('/portal/admin/events');
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname === 'portal.localhost' ||
+                         hostname.startsWith('portal.') ||
+                         hostname.includes('vercel.app');
+      navigate(isSubdomain ? '/admin/events' : '/portal/admin/events');
     } finally {
       setLoading(false);
     }
@@ -186,8 +190,12 @@ export function EventForm() {
           description: 'Event created successfully'
         });
       }
-      
-      navigate('/portal/admin/events');
+
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname === 'portal.localhost' ||
+                         hostname.startsWith('portal.') ||
+                         hostname.includes('vercel.app');
+      navigate(isSubdomain ? '/admin/events' : '/portal/admin/events');
     } catch (error: any) {
       console.error('Error saving event:', error);
       toast({
@@ -204,7 +212,13 @@ export function EventForm() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/portal/admin/events')}>
+        <Button variant="ghost" onClick={() => {
+          const hostname = window.location.hostname;
+          const isSubdomain = hostname === 'portal.localhost' ||
+                             hostname.startsWith('portal.') ||
+                             hostname.includes('vercel.app');
+          navigate(isSubdomain ? '/admin/events' : '/portal/admin/events');
+        }}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Events
         </Button>
@@ -623,7 +637,13 @@ export function EventForm() {
 
         {/* Form Actions */}
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate('/portal/admin/events')}>
+          <Button type="button" variant="outline" onClick={() => {
+            const hostname = window.location.hostname;
+            const isSubdomain = hostname === 'portal.localhost' ||
+                               hostname.startsWith('portal.') ||
+                               hostname.includes('vercel.app');
+            navigate(isSubdomain ? '/admin/events' : '/portal/admin/events');
+          }}>
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>

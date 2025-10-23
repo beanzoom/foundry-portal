@@ -533,7 +533,11 @@ export function PortalAdminSurveyBuilder() {
         description: "Survey saved successfully",
       });
 
-      navigate('/portal/admin/surveys');
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname === 'portal.localhost' ||
+                         hostname.startsWith('portal.') ||
+                         hostname.includes('vercel.app');
+      navigate(isSubdomain ? '/admin/surveys' : '/portal/admin/surveys');
     } catch (error) {
       logger.error('Error saving survey:', error);
       toast({
@@ -574,7 +578,13 @@ export function PortalAdminSurveyBuilder() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Button
-            onClick={() => navigate('/portal/admin/surveys')}
+            onClick={() => {
+              const hostname = window.location.hostname;
+              const isSubdomain = hostname === 'portal.localhost' ||
+                                 hostname.startsWith('portal.') ||
+                                 hostname.includes('vercel.app');
+              navigate(isSubdomain ? '/admin/surveys' : '/portal/admin/surveys');
+            }}
             variant="ghost"
             size="sm"
           >
@@ -997,7 +1007,11 @@ export function PortalAdminSurveyBuilder() {
             setPublishDialogOpen(open);
             if (!open) {
               // Navigate after dialog closes successfully
-              navigate('/portal/admin/surveys');
+              const hostname = window.location.hostname;
+              const isSubdomain = hostname === 'portal.localhost' ||
+                                 hostname.startsWith('portal.') ||
+                                 hostname.includes('vercel.app');
+              navigate(isSubdomain ? '/admin/surveys' : '/portal/admin/surveys');
             }
           }}
           contentType="survey"

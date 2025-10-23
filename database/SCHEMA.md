@@ -133,7 +133,7 @@
 | name | text | NO | - | List name |
 | description | text | YES | null | List description |
 | type | text | YES | 'static' | static, dynamic, role-based |
-| filter_criteria | jsonb | YES | {} | Dynamic list filters |
+| config | jsonb | YES | {} | Configuration (roles, filters, etc) |
 | created_at | timestamp with time zone | YES | now() | Created timestamp |
 | updated_at | timestamp with time zone | YES | now() | Last updated |
 
