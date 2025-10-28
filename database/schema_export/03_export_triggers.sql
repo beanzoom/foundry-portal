@@ -116,7 +116,8 @@ WHERE tgrelid IN (
         'portal_audit_log', 'portal_user_deletion_logs', 'email_queue',
         'email_templates', 'email_logs', 'email_notifications', 'email_notification_batches',
         'notification_rules', 'notification_events', 'notification_logs', 'recipient_lists',
-        'contact_tracking', 'contact_interactions', 'portal_solutions', 'profiles'
+        'contacts', 'contact_submissions', 'contact_dsp_locations', 'interactions',
+        'dsps', 'dsp_locations', 'stations', 'markets', 'regions', 'businesses', 'profiles'
     )
 )
 AND NOT tgisinternal
