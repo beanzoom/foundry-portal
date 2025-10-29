@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { portalRoute } from '@/lib/portal/navigation';
 
 // Import components (to be created)
 import { ContactList } from '@/components/portal/admin/contacts/ContactList';
@@ -54,7 +55,7 @@ export function PortalAdminContacts() {
       setActiveTab('analytics');
     } else if (path.includes('/contacts/activity')) {
       setActiveTab('activity');
-    } else if (path === '/portal/admin/contacts' || path === '/portal/admin/contacts/') {
+    } else if (path.includes('/contacts')) {
       setActiveTab('dashboard');
     }
   }, [location.pathname]);
@@ -64,16 +65,16 @@ export function PortalAdminContacts() {
     setActiveTab(value);
     switch (value) {
       case 'dashboard':
-        navigate('/portal/admin/contacts');
+        navigate(portalRoute('/admin/contacts'));
         break;
       case 'organization':
-        navigate('/portal/admin/contacts/organization');
+        navigate(portalRoute('/admin/contacts/organization'));
         break;
       case 'analytics':
-        navigate('/portal/admin/contacts/analytics');
+        navigate(portalRoute('/admin/contacts/analytics'));
         break;
       case 'activity':
-        navigate('/portal/admin/contacts/activity');
+        navigate(portalRoute('/admin/contacts/activity'));
         break;
     }
   };
