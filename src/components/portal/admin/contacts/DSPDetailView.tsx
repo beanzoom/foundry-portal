@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/breadcrumb';
+import { portalRoute } from '@/lib/portal/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +99,7 @@ export function DSPDetailView() {
         <p className="text-muted-foreground mt-2">
           The requested DSP could not be found.
         </p>
-        <Button onClick={() => navigate('/portal/admin/contacts')} className="mt-4">
+        <Button onClick={() => navigate(portalRoute('/admin/contacts'))} className="mt-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Contacts
         </Button>
@@ -108,9 +109,9 @@ export function DSPDetailView() {
 
   // Build breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Contacts', href: '/portal/admin/contacts' },
-    { label: 'Organization', href: '/portal/admin/contacts/organization' },
-    { label: 'DSPs', href: '/portal/admin/contacts/organization/dsps' },
+    { label: 'Contacts', href: portalRoute('/admin/contacts') },
+    { label: 'Organization', href: portalRoute('/admin/contacts/organization') },
+    { label: 'DSPs', href: portalRoute('/admin/contacts/organization/dsps') },
     { label: dsp?.dsp_code || dsp?.dsp_name || 'Details', current: true },
   ];
 
@@ -125,7 +126,7 @@ export function DSPDetailView() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/portal/admin/contacts/organization/dsps')}
+            onClick={() => navigate(portalRoute('/admin/contacts/organization/dsps'))}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to DSPs
@@ -292,7 +293,7 @@ export function DSPDetailView() {
                   <div
                     key={contact.id}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
-                    onClick={() => navigate(`/portal/admin/contacts/${contact.id}`)}
+                    onClick={() => navigate(portalRoute(`/admin/contacts/${contact.id}`))}
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -425,7 +426,7 @@ export function DSPDetailView() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => navigate(`/portal/admin/contacts/${contact.id}`)}
+                                onClick={() => navigate(portalRoute(`/admin/contacts/${contact.id}`))}
                               >
                                 View
                                 <ChevronRight className="h-4 w-4 ml-1" />

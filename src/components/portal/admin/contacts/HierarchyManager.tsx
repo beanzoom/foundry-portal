@@ -26,6 +26,7 @@ import { DSPFormEnhanced } from './DSPFormEnhanced';
 import { ContactList } from './ContactList';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/breadcrumb';
+import { portalRoute } from '@/lib/portal/navigation';
 import {
   Building,
   MapPin,
@@ -740,8 +741,8 @@ export function HierarchyManager() {
 
   // Build breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Contacts', href: '/portal/admin/contacts' },
-    { label: 'Organization', href: '/portal/admin/contacts/organization' },
+    { label: 'Contacts', href: portalRoute('/admin/contacts') },
+    { label: 'Organization', href: portalRoute('/admin/contacts/organization') },
   ];
   
   // Add specific tab to breadcrumb if not overview
@@ -779,12 +780,12 @@ export function HierarchyManager() {
       </div>
 
       {/* Main Content */}
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onValueChange={(value) => {
           setActiveTab(value as any);
-          // Navigate to the corresponding URL
-          const baseUrl = '/portal/admin/contacts/organization';
+          // Navigate to the corresponding URL using portalRoute
+          const baseUrl = portalRoute('/admin/contacts/organization');
           if (value === 'overview') {
             navigate(`${baseUrl}/overview`);
           } else if (value === 'contacts') {
@@ -1336,7 +1337,7 @@ export function HierarchyManager() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => navigate(`/portal/admin/contacts/organization/dsps/${dsp.id}`)}>
+                                <DropdownMenuItem onClick={() => navigate(portalRoute(`/admin/contacts/organization/dsps/${dsp.id}`))}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
