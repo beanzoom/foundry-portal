@@ -8,15 +8,19 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  User, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  User,
   AlertCircle,
   Save,
   X,
   Camera,
   Upload,
   Mail,
-  Phone
+  Phone,
+  Building2,
+  UserCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { usePortal } from '@/contexts/PortalContext';
 import { supabase } from '@/lib/supabase';
@@ -283,10 +287,12 @@ export function PortalProfileEdit() {
       if (!portalUser) throw new Error('No user session');
       
       // Save profile information
+      // NOTE: Email is intentionally excluded - it cannot be changed via profile edit
+      // Email must be changed through Supabase Auth (requires verification)
       const updateData: any = {
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email,
+        // email: formData.email,  // REMOVED - email is read-only, synced from auth.users
         phone: formData.phone || null,
         title: formData.title || null,
         bio: formData.bio || null,
@@ -376,6 +382,17 @@ export function PortalProfileEdit() {
       <div className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(portalRoute('/profile'))}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Profile
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">Edit Profile</h1>
           <p className="mt-2 text-gray-600">
             Complete your profile to access all portal features
@@ -417,56 +434,70 @@ export function PortalProfileEdit() {
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-          {/* Avatar Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
-              <CardDescription>Upload a professional headshot for your profile</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={avatarUrl || undefined} />
-                  <AvatarFallback className="text-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
-                    {getInitials(formData.firstName, formData.lastName)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="avatar" className="cursor-pointer">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition-colors">
-                      {uploadingAvatar ? (
-                        <>
-                          <Upload className="h-4 w-4 animate-pulse" />
-                          <span>Uploading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="h-4 w-4" />
-                          <span>Change Photo</span>
-                        </>
-                      )}
-                    </div>
-                  </Label>
-                  <Input
-                    id="avatar"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    disabled={uploadingAvatar}
-                  />
-                  <p className="text-xs text-gray-500">
-                    JPG, PNG or WebP. Max 5MB.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 bg-muted">
+            <TabsTrigger value="profile">
+              <UserCircle className="h-4 w-4 mr-2" />
+              Profile Information
+            </TabsTrigger>
+            <TabsTrigger value="businesses">
+              <Building2 className="h-4 w-4 mr-2" />
+              Business Information
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Profile Information */}
-          <Card>
+          {/* Profile Tab */}
+          <TabsContent value="profile">
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              {/* Avatar Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile Picture</CardTitle>
+                  <CardDescription>Upload a professional headshot for your profile</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-6">
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={avatarUrl || undefined} />
+                      <AvatarFallback className="text-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                        {getInitials(formData.firstName, formData.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="avatar" className="cursor-pointer">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition-colors">
+                          {uploadingAvatar ? (
+                            <>
+                              <Upload className="h-4 w-4 animate-pulse" />
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Camera className="h-4 w-4" />
+                              <span>Change Photo</span>
+                            </>
+                          )}
+                        </div>
+                      </Label>
+                      <Input
+                        id="avatar"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        disabled={uploadingAvatar}
+                      />
+                      <p className="text-xs text-gray-500">
+                        JPG, PNG or WebP. Max 5MB.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Profile Information */}
+              <Card>
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>Basic information about you</CardDescription>
@@ -521,11 +552,16 @@ export function PortalProfileEdit() {
                       type="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="pl-10"
+                      className="pl-10 bg-gray-50"
                       placeholder="your@email.com"
                       required
+                      disabled
+                      title="Email cannot be changed here. Please contact support if you need to change your email."
                     />
                   </div>
+                  <p className="text-xs text-gray-500">
+                    Login email cannot be changed in profile settings
+                  </p>
                 </div>
                 
                 <div className="space-y-2">
@@ -574,46 +610,62 @@ export function PortalProfileEdit() {
             </CardContent>
           </Card>
 
-          {/* Business Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Business Information</CardTitle>
-              <CardDescription>
-                Manage your businesses and their contact information
-                {portalUser?.role !== 'superadmin' && portalUser?.role !== 'super_admin' && 
-                 portalUser?.role !== 'admin' && portalUser?.role !== 'investor' && 
-                 ' (at least one business required)'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BusinessManager 
-                userId={portalUser.id}
-                onChange={(updatedBusinesses) => setBusinesses(updatedBusinesses)}
-              />
-            </CardContent>
-          </Card>
+              {/* Profile Save Button */}
+              <div className="flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={loading}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading || saveStatus === 'saving'}
+                  className="bg-violet-600 hover:bg-violet-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {saveStatus === 'saving' ? 'Saving...' : 'Save Profile'}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={loading}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || saveStatus === 'saving'}
-              className="bg-violet-600 hover:bg-violet-700"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saveStatus === 'saving' ? 'Saving...' : 'Save Profile'}
-            </Button>
-          </div>
-        </form>
+          {/* Business Tab */}
+          <TabsContent value="businesses">
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Information</CardTitle>
+                <CardDescription>
+                  Manage your businesses and their contact information
+                  {portalUser?.role !== 'superadmin' && portalUser?.role !== 'super_admin' &&
+                   portalUser?.role !== 'admin' && portalUser?.role !== 'investor' &&
+                   ' (at least one business required)'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BusinessManager
+                  userId={portalUser.id}
+                  onChange={(updatedBusinesses) => setBusinesses(updatedBusinesses)}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Cancel Button for Business Tab */}
+            <div className="flex justify-end mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

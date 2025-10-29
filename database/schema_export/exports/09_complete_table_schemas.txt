@@ -1,0 +1,152 @@
+[
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS businesses (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  company_name text NOT NULL,\n  website text,\n  description text,\n  is_amazon_dsp bool DEFAULT false,\n  year_dsp_began int4,\n  avg_fleet_vehicles int4,\n  avg_drivers int4,\n  email text,\n  phone text,\n  mobile text,\n  street1 text,\n  street2 text,\n  city text,\n  state text,\n  zip text,\n  is_primary bool DEFAULT false,\n  display_order int4 DEFAULT 0,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  address text,\n  type varchar(50),\n  services_offered text,\n  primary_markets text,\n  fleet_size int4,\n  driver_count int4,\n  year_established int4,\n  owner_id uuid\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS calculator_submissions (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid,\n  user_email text,\n  user_name text,\n  company_name text,\n  total_monthly_savings numeric NOT NULL DEFAULT 0,\n  total_annual_savings numeric NOT NULL DEFAULT 0,\n  labor_savings_total numeric DEFAULT 0,\n  system_savings_total numeric DEFAULT 0,\n  fixed_savings_total numeric DEFAULT 0,\n  labor_savings_items jsonb DEFAULT '[]'::jsonb,\n  system_replacement_items jsonb DEFAULT '[]'::jsonb,\n  fixed_savings_items jsonb DEFAULT '[]'::jsonb,\n  fleet_size int4,\n  notes text,\n  submission_date timestamptz DEFAULT now(),\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  is_latest bool DEFAULT true,\n  previous_submission_id uuid,\n  afs_savings_total numeric DEFAULT 0,\n  afs_savings_items jsonb DEFAULT '[]'::jsonb\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS contact_dsp_locations (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  contact_id uuid NOT NULL,\n  dsp_location_id uuid NOT NULL,\n  is_primary bool DEFAULT false,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS contact_submissions (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid,\n  name varchar(255) NOT NULL,\n  email varchar(255) NOT NULL,\n  phone varchar(50),\n  company varchar(255),\n  subject varchar(500) NOT NULL,\n  category varchar(50) NOT NULL,\n  message text NOT NULL,\n  status varchar(50) NOT NULL DEFAULT 'new'::character varying,\n  priority varchar(20) DEFAULT 'normal'::character varying,\n  admin_notes text,\n  assigned_to uuid,\n  resolved_at timestamptz,\n  resolved_by uuid,\n  created_at timestamptz NOT NULL DEFAULT now(),\n  updated_at timestamptz NOT NULL DEFAULT now(),\n  read_at timestamptz\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS contacts (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  dsp_id uuid,\n  station_id uuid,\n  market_id uuid,\n  first_name varchar(100),\n  last_name varchar(100),\n  email varchar(255),\n  phone varchar(20),\n  title contact_title_enum,\n  referred_by_contact_id uuid,\n  referred_by_text varchar(255),\n  tags _text,\n  notes text,\n  last_contacted_at timestamptz,\n  contact_status varchar(50) DEFAULT 'new'::character varying,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  created_by uuid,\n  is_active bool DEFAULT true,\n  referral_id uuid,\n  is_portal_member bool DEFAULT false,\n  portal_profile_id uuid\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS dsp_locations (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  dsp_id uuid NOT NULL,\n  station_id uuid NOT NULL,\n  is_primary bool DEFAULT false,\n  is_active bool DEFAULT true,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  created_by uuid\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS dsps (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  station_id uuid,\n  dsp_code varchar(50),\n  dsp_name varchar(255) NOT NULL,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  created_by uuid,\n  is_active bool DEFAULT true,\n  website varchar(255),\n  notes text,\n  primary_station_id uuid\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_logs (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  batch_id uuid,\n  to_email text NOT NULL,\n  subject text NOT NULL,\n  status text NOT NULL DEFAULT 'pending'::text,\n  template text,\n  template_data jsonb,\n  html_content text,\n  text_content text,\n  sent_at timestamptz,\n  error_message text,\n  retry_count int4 DEFAULT 0,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  resend_id text,\n  user_id uuid,\n  provider text DEFAULT 'resend'::text\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_logs_backup_042 (\n  id uuid,\n  batch_id uuid,\n  to_email text,\n  subject text,\n  status text,\n  template text,\n  template_data jsonb,\n  html_content text,\n  text_content text,\n  sent_at timestamptz,\n  error_message text,\n  retry_count int4,\n  metadata jsonb,\n  created_at timestamptz,\n  updated_at timestamptz\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_notification_batches (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  notification_type text NOT NULL,\n  update_id uuid,\n  survey_id uuid,\n  event_id uuid,\n  status text NOT NULL DEFAULT 'pending'::text,\n  total_recipients int4 DEFAULT 0,\n  processed_count int4 DEFAULT 0,\n  failed_count int4 DEFAULT 0,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  started_at timestamptz DEFAULT now(),\n  completed_at timestamptz,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  content_id text,\n  content_data jsonb,\n  processed_at timestamptz,\n  error_message text,\n  emails_sent int4 DEFAULT 0,\n  emails_failed int4 DEFAULT 0,\n  content_title text\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_notification_batches_archive (\n  id uuid,\n  update_id uuid,\n  survey_id uuid,\n  event_id uuid,\n  notification_type text,\n  total_recipients int4,\n  emails_sent int4,\n  emails_failed int4,\n  started_at timestamptz,\n  completed_at timestamptz,\n  status text,\n  error_message text,\n  metadata jsonb,\n  created_by uuid,\n  archived_at timestamptz,\n  archive_reason text\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_notification_batches_backup_042 (\n  id uuid,\n  notification_type text,\n  update_id uuid,\n  survey_id uuid,\n  event_id uuid,\n  status text,\n  total_recipients int4,\n  processed_count int4,\n  failed_count int4,\n  metadata jsonb,\n  started_at timestamptz,\n  completed_at timestamptz,\n  created_at timestamptz,\n  updated_at timestamptz,\n  content_id text,\n  content_data jsonb,\n  processed_at timestamptz,\n  error_message text\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_notifications (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  rule_id uuid,\n  event_id text,\n  to_email text NOT NULL,\n  cc_email text,\n  bcc_email text,\n  subject text NOT NULL,\n  template_id text NOT NULL,\n  template_data jsonb DEFAULT '{}'::jsonb,\n  status text DEFAULT 'pending'::text,\n  priority int4 DEFAULT 5,\n  scheduled_for timestamptz DEFAULT now(),\n  sent_at timestamptz,\n  failed_at timestamptz,\n  error_message text,\n  error_count int4 DEFAULT 0,\n  max_retries int4 DEFAULT 3,\n  retry_after timestamptz,\n  email_provider_id text,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  created_by uuid,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_queue (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  email_options jsonb DEFAULT '{}'::jsonb,\n  scheduled_for timestamptz DEFAULT now(),\n  priority int4 DEFAULT 5,\n  status text DEFAULT 'queued'::text,\n  attempts int4 DEFAULT 0,\n  last_error text,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  event_type text NOT NULL DEFAULT 'unknown'::text,\n  event_id text,\n  event_payload jsonb DEFAULT '{}'::jsonb,\n  template_id text,\n  recipient_list_id text,\n  to_email text,\n  to_user_id uuid,\n  expires_at timestamptz DEFAULT (now() + '7 days'::interval),\n  batch_id uuid,\n  processed_at timestamptz,\n  processor_id text,\n  max_attempts int4 DEFAULT 3,\n  last_attempt_at timestamptz,\n  next_retry_at timestamptz,\n  retry_strategy text DEFAULT 'exponential'::text,\n  error_details jsonb,\n  tags _text,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  created_by uuid\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS email_templates (\n  id text NOT NULL,\n  name text NOT NULL,\n  subject text NOT NULL,\n  body_html text NOT NULL,\n  body_text text,\n  variables _text,\n  category text DEFAULT 'general'::text,\n  is_active bool DEFAULT true,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  created_by uuid,\n  metadata jsonb DEFAULT '{}'::jsonb\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS interactions (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  contact_id uuid NOT NULL,\n  interaction_type interaction_type_enum NOT NULL,\n  details text NOT NULL,\n  interaction_date timestamptz DEFAULT now(),\n  created_by uuid,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS marketing_campaign_links (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  funnel_id uuid NOT NULL,\n  campaign_name text NOT NULL,\n  campaign_code varchar(50) NOT NULL,\n  landing_url text NOT NULL,\n  direct_url text NOT NULL,\n  notes text,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS markets (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  name varchar(255) NOT NULL,\n  description text,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  created_by uuid,\n  is_active bool DEFAULT true,\n  timezone varchar(50) DEFAULT 'America/New_York'::character varying,\n  region_id uuid,\n  states _text DEFAULT '{}'::text[],\n  primary_state varchar(2)\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS membership_agreements (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  agreement_version text NOT NULL DEFAULT '1.0'::text,\n  agreed_text text NOT NULL,\n  typed_name text NOT NULL,\n  expected_name text NOT NULL,\n  ip_address inet,\n  user_agent text,\n  agreed_at timestamptz NOT NULL DEFAULT now(),\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS nda_agreements (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  nda_version text NOT NULL DEFAULT '1.0'::text,\n  agreed_text text NOT NULL,\n  typed_name text NOT NULL,\n  expected_name text NOT NULL,\n  ip_address inet,\n  user_agent text,\n  agreed_at timestamptz NOT NULL DEFAULT now(),\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS notification_events (\n  id text NOT NULL,\n  name text NOT NULL,\n  description text,\n  category text NOT NULL,\n  payload_schema jsonb,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS notification_logs (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  notification_id uuid,\n  event_type text NOT NULL,\n  details jsonb DEFAULT '{}'::jsonb,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS notification_rules (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  event_id text NOT NULL,\n  name text NOT NULL,\n  description text,\n  template_id text NOT NULL,\n  priority int4 DEFAULT 5,\n  enabled bool DEFAULT true,\n  conditions jsonb DEFAULT '{}'::jsonb,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  recipient_list_id uuid NOT NULL\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_admin_activity (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  admin_id uuid,\n  action varchar(50) NOT NULL,\n  entity_type varchar(50) NOT NULL,\n  entity_id uuid,\n  entity_title varchar(255),\n  changes jsonb,\n  ip_address inet,\n  user_agent text,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_audit_log (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  action text NOT NULL,\n  entity_type text NOT NULL,\n  entity_id uuid,\n  admin_id uuid,\n  details jsonb,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_event_dates (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  event_id uuid,\n  start_time timestamptz NOT NULL,\n  end_time timestamptz NOT NULL,\n  max_attendees int4,\n  current_attendees int4 DEFAULT 0,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_event_guests (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  registration_id uuid,\n  first_name varchar(100) NOT NULL,\n  last_name varchar(100) NOT NULL,\n  email varchar(255),\n  checked_in_at timestamptz,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_event_registrations (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  event_id uuid,\n  user_id uuid,\n  registered_at timestamptz DEFAULT now(),\n  attended bool DEFAULT false,\n  attendance_status varchar(20) DEFAULT 'registered'::character varying,\n  payment_status varchar(20) DEFAULT 'pending'::character varying,\n  payment_amount numeric,\n  payment_date timestamptz,\n  check_in_time timestamptz,\n  cancellation_date timestamptz,\n  cancellation_reason text,\n  notes text,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  event_date_id uuid,\n  cancelled_at timestamptz,\n  checked_in_at timestamptz,\n  attended_at timestamptz\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_event_reminders (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  event_id uuid,\n  registration_id uuid,\n  reminder_type varchar(50),\n  sent_at timestamptz DEFAULT now(),\n  email_sent bool DEFAULT false,\n  sms_sent bool DEFAULT false\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_event_templates (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  name varchar(200) NOT NULL,\n  type varchar(50) NOT NULL,\n  default_title varchar(200),\n  default_description text,\n  default_max_guests int4 DEFAULT 0,\n  default_location_name varchar(200),\n  default_location_address text,\n  default_video_platform varchar(50),\n  is_active bool DEFAULT true,\n  created_by uuid,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_events (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  title text NOT NULL,\n  description text,\n  event_date timestamptz NOT NULL,\n  location text,\n  virtual_link text,\n  status text DEFAULT 'draft'::text,\n  created_by uuid,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  slug varchar(255),\n  event_type varchar(20) DEFAULT 'virtual'::character varying,\n  timezone varchar(100) DEFAULT 'America/New_York'::character varying,\n  registration_required bool DEFAULT false,\n  registration_limit int4,\n  registration_deadline timestamptz,\n  registration_fee numeric,\n  tags _text,\n  category varchar(50),\n  metadata jsonb DEFAULT '{}'::jsonb,\n  location_name varchar(255),\n  location_address text,\n  location_city varchar(100),\n  location_state varchar(50),\n  location_zip varchar(20),\n  location_country varchar(100) DEFAULT 'USA'::character varying,\n  location_coordinates jsonb,\n  virtual_platform varchar(50),\n  virtual_instructions text,\n  banner_image_url text,\n  thumbnail_image_url text,\n  agenda jsonb,\n  speakers jsonb,\n  sponsors jsonb,\n  resources jsonb,\n  cancellation_reason text,\n  start_datetime timestamptz DEFAULT now(),\n  end_datetime timestamptz DEFAULT (now() + '01:00:00'::interval),\n  type varchar(50) NOT NULL DEFAULT 'in_person'::character varying,\n  max_guests_per_registration int4 DEFAULT 0,\n  is_private bool DEFAULT false,\n  views_count int4 DEFAULT 0,\n  location_url text,\n  video_platform varchar(50),\n  video_url text,\n  video_meeting_id varchar(100),\n  video_passcode varchar(100),\n  email_batch_id uuid,\n  email_sent_at timestamptz,\n  published_at timestamptz,\n  target_audience text DEFAULT 'all'::text,\n  is_active bool NOT NULL DEFAULT true,\n  registration_open bool DEFAULT true\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_memberships (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  portal_role text NOT NULL,\n  joined_at timestamptz DEFAULT now(),\n  subscription_tier text,\n  is_active bool DEFAULT true,\n  notes text,\n  status text DEFAULT 'active'::text\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_referral_conversions (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  referral_id uuid NOT NULL,\n  referee_profile_id uuid NOT NULL,\n  converted_at timestamptz DEFAULT now(),\n  onboarding_completed_at timestamptz,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_referral_rate_limits (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  action_type text NOT NULL,\n  referral_id uuid,\n  action_timestamp timestamptz DEFAULT now(),\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_referrals (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  referrer_id uuid NOT NULL,\n  referee_first_name text NOT NULL,\n  referee_last_name text NOT NULL,\n  referee_email text NOT NULL,\n  referee_phone text,\n  dsp_name text,\n  dsp_code text,\n  referral_code text NOT NULL,\n  status text NOT NULL DEFAULT 'pending'::text,\n  invitation_sent_at timestamptz,\n  last_resent_at timestamptz,\n  resend_count int4 DEFAULT 0,\n  registered_at timestamptz,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  referral_type varchar(20) DEFAULT 'individual'::character varying,\n  referral_source varchar(50),\n  is_reusable bool DEFAULT false,\n  usage_count int4 DEFAULT 0,\n  max_uses int4,\n  source_metadata jsonb,\n  expires_at timestamptz\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_referrals_archive (\n  id uuid NOT NULL,\n  referrer_id uuid NOT NULL,\n  referee_first_name text NOT NULL,\n  referee_last_name text NOT NULL,\n  referee_email text NOT NULL,\n  referee_phone text,\n  referee_company text,\n  referral_code text NOT NULL,\n  invitation_sent_at timestamptz,\n  reminder_sent_at timestamptz,\n  expires_at timestamptz,\n  status text NOT NULL,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  created_at timestamptz,\n  updated_at timestamptz,\n  deleted_at timestamptz DEFAULT now(),\n  deleted_by uuid,\n  deletion_reason text,\n  deletion_metadata jsonb DEFAULT '{}'::jsonb,\n  had_contact_record bool DEFAULT false,\n  had_email_notifications int4 DEFAULT 0,\n  had_conversion_record bool DEFAULT false\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_survey_answers (\n  id uuid NOT NULL DEFAULT uuid_generate_v4(),\n  response_id uuid NOT NULL,\n  question_id uuid NOT NULL,\n  answer_value jsonb NOT NULL,\n  answered_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_survey_questions (\n  id uuid NOT NULL DEFAULT uuid_generate_v4(),\n  survey_id uuid NOT NULL,\n  question_type varchar(50) NOT NULL,\n  question_text text NOT NULL,\n  options jsonb,\n  required bool DEFAULT true,\n  position int4 NOT NULL,\n  created_at timestamptz DEFAULT now(),\n  section_id uuid,\n  section_order int4 DEFAULT 0\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_survey_responses (\n  id uuid NOT NULL DEFAULT uuid_generate_v4(),\n  survey_id uuid NOT NULL,\n  user_id uuid NOT NULL,\n  started_at timestamptz DEFAULT now(),\n  last_saved_at timestamptz,\n  completed_at timestamptz,\n  is_complete bool DEFAULT false,\n  current_question_position int4 DEFAULT 1,\n  is_test_response bool DEFAULT false,\n  completed bool DEFAULT false,\n  answered_questions int4 DEFAULT 0,\n  status text DEFAULT 'in_progress'::text\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_survey_sections (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  survey_id uuid NOT NULL,\n  title text NOT NULL,\n  description text,\n  display_order int4 NOT NULL DEFAULT 0,\n  show_condition jsonb DEFAULT '{}'::jsonb,\n  is_required bool DEFAULT false,\n  can_skip bool DEFAULT true,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_surveys (\n  id uuid NOT NULL DEFAULT uuid_generate_v4(),\n  title varchar(255) NOT NULL,\n  description text,\n  status varchar(50) NOT NULL DEFAULT 'draft'::character varying,\n  created_by uuid,\n  created_at timestamptz DEFAULT now(),\n  published_at timestamptz,\n  closed_at timestamptz,\n  updated_at timestamptz DEFAULT now(),\n  is_compulsory bool DEFAULT false,\n  allow_anonymous bool DEFAULT false,\n  scheduled_publish_at timestamptz,\n  scheduled_close_at timestamptz,\n  max_responses int4,\n  tags jsonb,\n  due_date timestamptz,\n  email_batch_id uuid,\n  email_sent_at timestamptz,\n  target_audience text DEFAULT 'all'::text,\n  question_count int4 DEFAULT 0,\n  is_active bool NOT NULL DEFAULT true\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_update_reads (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  update_id uuid NOT NULL,\n  user_id uuid NOT NULL,\n  first_viewed_at timestamptz DEFAULT now(),\n  last_viewed_at timestamptz DEFAULT now(),\n  view_count int4 DEFAULT 1,\n  acknowledged_at timestamptz,\n  dismissed_at timestamptz,\n  time_to_acknowledge interval,\n  device_info jsonb\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_updates (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  title varchar(255) NOT NULL,\n  content text NOT NULL,\n  update_type varchar(20) NOT NULL DEFAULT 'advisory'::character varying,\n  status varchar(20) DEFAULT 'draft'::character varying,\n  target_audience varchar(20) DEFAULT 'all'::character varying,\n  priority int4 DEFAULT 0,\n  created_by uuid,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  published_at timestamptz,\n  archived_at timestamptz,\n  is_correction_of uuid,\n  correction_note text,\n  view_count int4 DEFAULT 0,\n  acknowledgment_count int4 DEFAULT 0,\n  dismissal_count int4 DEFAULT 0,\n  archived_by uuid,\n  type varchar(50) DEFAULT 'general'::character varying,\n  email_batch_id uuid,\n  email_sent_at timestamptz\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS portal_user_deletion_logs (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  deleted_user_id uuid NOT NULL,\n  deleted_by uuid NOT NULL,\n  deletion_reason text,\n  user_data jsonb,\n  deleted_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS profiles (\n  id uuid NOT NULL,\n  first_name text,\n  middle_name text,\n  last_name text,\n  suffix text,\n  preferred_name text,\n  email text,\n  phone_number text,\n  updated_at timestamptz DEFAULT timezone('utc'::text, now()),\n  avatar_url text,\n  avatar_path text,\n  created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now()),\n  status user_status NOT NULL DEFAULT 'active'::user_status,\n  organization_id uuid,\n  title text,\n  metadata jsonb DEFAULT '{}'::jsonb,\n  last_sign_in_at timestamptz,\n  bio text,\n  year_dsp_began int4,\n  avg_fleet_vehicles int4,\n  avg_drivers int4,\n  mobile text,\n  street1 text,\n  street2 text,\n  city text,\n  state text,\n  zip text,\n  website text,\n  average_fleet_size int4,\n  average_drivers int4,\n  phone text,\n  company_name text,\n  profile_complete bool DEFAULT false,\n  role text DEFAULT 'user'::text,\n  terms_accepted bool DEFAULT false,\n  terms_accepted_at timestamptz,\n  terms_version text,\n  email_updates bool DEFAULT true,\n  email_surveys bool DEFAULT true,\n  email_events bool DEFAULT true,\n  preferences_updated_at timestamptz,\n  is_portal_user bool DEFAULT false,\n  portal_registered_at timestamptz,\n  is_system_account bool DEFAULT false\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS recipient_lists (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  name text NOT NULL,\n  code text NOT NULL,\n  description text,\n  type text NOT NULL,\n  config jsonb DEFAULT '{}'::jsonb,\n  is_system bool DEFAULT false,\n  is_active bool DEFAULT true,\n  icon text,\n  color text,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS referral_conversions (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  referral_id uuid NOT NULL,\n  user_id uuid NOT NULL,\n  converted_at timestamptz DEFAULT now(),\n  conversion_metadata jsonb,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS referral_deletion_logs (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  referral_id uuid NOT NULL,\n  deleted_by uuid NOT NULL,\n  deleted_at timestamptz DEFAULT now(),\n  deletion_summary jsonb NOT NULL,\n  deletion_reason text,\n  admin_note text,\n  ip_address text,\n  user_agent text,\n  created_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS regions (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  code varchar(10) NOT NULL,\n  name varchar(100) NOT NULL,\n  states _text NOT NULL,\n  divisions jsonb DEFAULT '{}'::jsonb,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n"
+  },
+  {
+    "create_table_statement": "CREATE TABLE IF NOT EXISTS stations (\n  id uuid NOT NULL DEFAULT gen_random_uuid(),\n  market_id uuid,\n  station_code varchar(50) NOT NULL,\n  city varchar(100),\n  state varchar(2),\n  zip varchar(10),\n  full_address text,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now(),\n  created_by uuid,\n  is_active bool DEFAULT true\n);\n"
+  }
+]

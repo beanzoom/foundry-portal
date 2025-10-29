@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, Star, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Star, Trash2, Briefcase } from 'lucide-react';
 import { BusinessForm } from './BusinessForm';
 import { supabase } from '@/lib/supabase';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -85,11 +86,12 @@ export function BusinessManager({ userId, onSave, onChange }: BusinessManagerPro
       };
       setProfileDefaults(defaults);
       
-      // Then load businesses
+      // Then load businesses - primary first, then by display_order
       const { data, error } = await supabase
         .from('businesses')
         .select('*')
         .eq('user_id', userId)
+        .order('is_primary', { ascending: false })
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -334,17 +336,20 @@ export function BusinessManager({ userId, onSave, onChange }: BusinessManagerPro
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between mb-4">
-          <TabsList>
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(businesses.length, 3)}, 1fr)` }}>
             {businesses.map((business, index) => (
-              <TabsTrigger key={index} value={String(index)} className="relative">
+              <TabsTrigger key={index} value={String(index)} className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                <span className="truncate">{business.company_name || `Business ${index + 1}`}</span>
                 {business.is_primary && (
-                  <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
+                  <Badge variant="secondary" className="ml-2 text-xs">Primary</Badge>
                 )}
-                {business.company_name || `Business ${index + 1}`}
               </TabsTrigger>
             ))}
           </TabsList>
-          
+        </div>
+
+        <div className="flex justify-end mb-4">
           <Button
             type="button"
             onClick={addBusiness}

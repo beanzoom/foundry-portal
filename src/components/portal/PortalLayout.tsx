@@ -150,6 +150,12 @@ export function PortalLayout({ children }: PortalLayoutProps) {
       route: `${pathPrefix}/dashboard`
     },
     {
+      id: 'mission',
+      label: 'Our Mission',
+      icon: <Target className="w-5 h-5" />,
+      route: `${pathPrefix}/mission`
+    },
+    {
       id: 'updates',
       label: 'Updates',
       icon: <Megaphone className="w-5 h-5" />,
@@ -177,22 +183,10 @@ export function PortalLayout({ children }: PortalLayoutProps) {
       route: `${pathPrefix}/solutions`
     },
     {
-      id: 'referrals',
-      label: 'Referrals',
-      icon: <UserPlus className="w-5 h-5" />,
-      route: `${pathPrefix}/referrals`
-    },
-    {
       id: 'calculators',
       label: 'Calculators',
       icon: <Calculator className="w-5 h-5" />,
       route: `${pathPrefix}/calculators`
-    },
-    {
-      id: 'mission',
-      label: 'Our Mission',
-      icon: <Target className="w-5 h-5" />,
-      route: `${pathPrefix}/mission`
     }
   ];
 
@@ -206,7 +200,15 @@ export function PortalLayout({ children }: PortalLayoutProps) {
     });
   }
 
-  // Add Contact link after Invest
+  // Add Referrals link after Invest
+  navigationItems.push({
+    id: 'referrals',
+    label: 'Referrals',
+    icon: <UserPlus className="w-5 h-5" />,
+    route: `${pathPrefix}/referrals`
+  });
+
+  // Add Contact link after Referrals
   navigationItems.push({
     id: 'contact',
     label: 'Contact',
@@ -341,6 +343,8 @@ export function PortalLayout({ children }: PortalLayoutProps) {
                       "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
                       isActiveRoute(item.route)
                         ? "bg-blue-50 text-blue-600 border-l-3 border-blue-600 font-semibold"
+                        : item.id === 'solutions'
+                        ? "bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 hover:from-purple-100 hover:to-blue-100 font-bold border-2 border-purple-300 shadow-sm"
                         : item.id === 'invest'
                         ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 hover:from-green-100 hover:to-emerald-100 font-semibold border border-green-200"
                         : item.id === 'contact'
