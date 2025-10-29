@@ -94,26 +94,38 @@ export class ContactTrackingService {
   async getStations(marketId?: string, includeInactive = false): Promise<Station[]> {
     let query = supabase
       .from('stations')
-      .select(`
-        *,
-        market:markets!stations_market_id_fkey(*)
-      `)
+      .select('*')
       .order('station_code');
-    
+
     if (!includeInactive) {
       query = query.eq('is_active', true);
     }
-    
+
     if (marketId) {
       query = query.eq('market_id', marketId);
     }
-    
+
     const { data, error } = await query;
-    
+
     if (error) throw error;
-    
-    // Return stations without counts for now
-    return data || [];
+
+    // Fetch market data separately for each station
+    const stationsWithMarkets = await Promise.all(
+      (data || []).map(async (station) => {
+        let market = null;
+        if (station.market_id) {
+          const { data: marketData } = await supabase
+            .from('markets')
+            .select('*')
+            .eq('id', station.market_id)
+            .single();
+          market = marketData;
+        }
+        return { ...station, market };
+      })
+    );
+
+    return stationsWithMarkets;
   }
 
   async getStation(id: string): Promise<Station | null> {
@@ -197,54 +209,65 @@ export class ContactTrackingService {
   async getDSPs(includeInactive = false, stationId?: string): Promise<DSP[]> {
     let query = supabase
       .from('dsps')
-      .select(`
-        *,
-        station:stations!dsps_station_id_fkey(
-          *,
-          market:markets!stations_market_id_fkey(*)
-        )
-      `)
+      .select('*')
       .order('dsp_name');
-    
+
     if (!includeInactive) {
       query = query.eq('is_active', true);
     }
-    
+
     if (stationId) {
       query = query.eq('station_id', stationId);
     }
-    
+
     const { data, error } = await query;
-    
+
     if (error) throw error;
-    
-    // Transform the data - no need to process contacts count anymore
-    const dspsWithCount = (data || []).map(dsp => ({
-      ...dsp,
-      contact_count: 0 // We'll get this separately if needed
-    }));
-    
-    // Fetch location counts for each DSP
-    if (dspsWithCount.length > 0) {
-      const dspIds = dspsWithCount.map(d => d.id);
-      const { data: locations } = await supabase
-        .from('dsp_locations')
-        .select('dsp_id')
-        .in('dsp_id', dspIds)
-        .eq('is_active', true);
-      
-      const locationCounts = locations?.reduce((acc, loc) => {
-        acc[loc.dsp_id] = (acc[loc.dsp_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
-      
-      return dspsWithCount.map(dsp => ({
-        ...dsp,
-        location_count: locationCounts[dsp.id] || 0
-      }));
-    }
-    
-    return dspsWithCount;
+
+    // Fetch related data separately for each DSP
+    const dspsWithRelations = await Promise.all(
+      (data || []).map(async (dsp) => {
+        // Get station info if station_id exists
+        let station = null;
+        if (dsp.station_id) {
+          const { data: stationData } = await supabase
+            .from('stations')
+            .select('*')
+            .eq('id', dsp.station_id)
+            .single();
+
+          if (stationData) {
+            // Get market for the station
+            let market = null;
+            if (stationData.market_id) {
+              const { data: marketData } = await supabase
+                .from('markets')
+                .select('*')
+                .eq('id', stationData.market_id)
+                .single();
+              market = marketData;
+            }
+            station = { ...stationData, market };
+          }
+        }
+
+        // Get location count
+        const { count: locationCount } = await supabase
+          .from('dsp_locations')
+          .select('*', { count: 'exact', head: true })
+          .eq('dsp_id', dsp.id)
+          .eq('is_active', true);
+
+        return {
+          ...dsp,
+          station,
+          contact_count: 0,
+          location_count: locationCount || 0
+        };
+      })
+    );
+
+    return dspsWithRelations;
   }
 
   async getDSP(id: string): Promise<DSP | null> {

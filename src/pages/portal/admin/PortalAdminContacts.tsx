@@ -273,7 +273,7 @@ export function PortalAdminContacts() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Recent Contacts</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab('organization')}>
+                  <Button variant="ghost" size="sm" onClick={() => handleTabChange('organization')}>
                     View All
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
