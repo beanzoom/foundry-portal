@@ -141,14 +141,16 @@ export function PortalRoutes() {
   // Also treat Vercel preview URLs as portal subdomains
   const hostname = window.location.hostname;
   const isVercelPreview = hostname.includes('vercel.app');
+  const isFoundrySubdomain = hostname === 'foundry.localhost' || hostname.startsWith('foundry.');
   const isSubdomain = hostname === 'portal.localhost' ||
                      (hostname.startsWith('portal.') && !hostname.startsWith('foundry.')) ||
                      isVercelPreview;
-  
+
   // IMPORTANT: Consider this a portal route if:
   // 1. We're on the portal subdomain, OR
-  // 2. The path starts with /portal
-  const isPortalRoute = isSubdomain || window.location.pathname.startsWith('/portal');
+  // 2. We're on the foundry subdomain, OR
+  // 3. The path starts with /portal
+  const isPortalRoute = isSubdomain || isFoundrySubdomain || window.location.pathname.startsWith('/portal');
 
   // Check if we need to redirect to portal subdomain (for production)
   const urlParams = new URLSearchParams(window.location.search);
@@ -162,9 +164,14 @@ export function PortalRoutes() {
     return null;
   }
 
+  // If on foundry subdomain, redirect to /foundry route
+  if (isFoundrySubdomain && window.location.pathname === '/') {
+    return <Navigate to="/foundry" replace />;
+  }
+
   // For non-subdomain: Only render if we're on a /portal path
   // For subdomain: Always render (we handle all routes)
-  if (!isSubdomain && !window.location.pathname.startsWith('/portal')) {
+  if (!isSubdomain && !isFoundrySubdomain && !window.location.pathname.startsWith('/portal')) {
     return null;
   }
 
