@@ -307,6 +307,48 @@ export async function cancelQueuedEmails(queueIds: string[]): Promise<boolean> {
   }
 }
 
+/**
+ * Get email stats for a specific event (e.g., after publishing)
+ * Checks recently processed emails for this event_id
+ */
+export async function getEventEmailStats(eventId: string, eventType: string): Promise<ProcessQueueResult> {
+  try {
+    // Query emails for this specific event that were processed in the last 5 seconds
+    const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+
+    const { data, error } = await supabase
+      .from('email_queue')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('event_type', eventType)
+      .gte('created_at', fiveSecondsAgo);
+
+    if (error) throw error;
+
+    const emails = data || [];
+    const sent = emails.filter(e => e.status === 'sent').length;
+    const failed = emails.filter(e => e.status === 'failed').length;
+    const total = emails.length;
+
+    return {
+      success: true,
+      processed: total,
+      sent,
+      failed,
+      message: `Processed ${total} email${total !== 1 ? 's' : ''}`
+    };
+  } catch (error) {
+    logger.error('Error getting event email stats:', error);
+    return {
+      success: false,
+      processed: 0,
+      sent: 0,
+      failed: 0,
+      message: 'Failed to get email stats'
+    };
+  }
+}
+
 // Export singleton instance
 export const emailQueueService = {
   processQueue: processEmailQueue,
@@ -314,5 +356,6 @@ export const emailQueueService = {
   getEventRecipients,
   getQueuedEmailCount,
   retryFailedEmails,
-  cancelQueuedEmails
+  cancelQueuedEmails,
+  getEventEmailStats
 };

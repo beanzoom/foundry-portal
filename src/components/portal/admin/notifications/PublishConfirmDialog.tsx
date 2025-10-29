@@ -131,19 +131,20 @@ export function PublishConfirmDialog({
       setPublishResult('success');
       logger.info('Content published successfully');
 
-      // Wait a moment for the database trigger to queue emails
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait a moment for the database trigger to process emails
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Step 2: Process the email queue
-      logger.info('Processing email queue...');
+      // Step 2: Check how many emails were sent for this event
+      logger.info('Checking email stats...');
       setSendingEmails(true);
-      const result = await emailQueueService.processQueue({ batchSize: 50 });
+      const eventType = eventTypeMap[contentType];
+      const result = await emailQueueService.getEventEmailStats(contentId, eventType);
       setEmailResult(result);
 
       if (result.success) {
         logger.info('Emails sent successfully', result);
       } else {
-        logger.error('Email sending failed', result);
+        logger.error('Email checking failed', result);
       }
 
     } catch (error) {
