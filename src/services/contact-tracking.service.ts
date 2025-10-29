@@ -474,16 +474,10 @@ export class ContactTrackingService {
     page = 1,
     perPage = 50
   ): Promise<PaginatedResponse<Contact>> {
-    // Fetch contacts with related data  
+    // Fetch contacts with basic data first (no relationships since FKs aren't set up)
     let query = supabase
       .from('contacts')
-      .select(`
-        *,
-        dsp:dsps(id, dsp_code, dsp_name),
-        station:stations(id, station_code),
-        market:markets(id, name),
-        interactions(count)
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('is_active', true);
     
     // Apply filters
@@ -584,18 +578,63 @@ export class ContactTrackingService {
       .order('created_at', { ascending: false });
     
     const { data, error, count } = await query;
-    
+
     if (error) throw error;
-    
-    // Transform the data to include interaction_count
-    const contactsWithCount = (data || []).map(contact => ({
-      ...contact,
-      interaction_count: contact.interactions?.[0]?.count || 0,
-      interactions: undefined // Remove the interactions array
-    }));
-    
+
+    // Fetch related data separately for each contact
+    const enrichedContacts = await Promise.all(
+      (data || []).map(async (contact) => {
+        // Get interaction count
+        const { count: interactionCount } = await supabase
+          .from('interactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('contact_id', contact.id);
+
+        // Get DSP info if dsp_id exists
+        let dsp = null;
+        if (contact.dsp_id) {
+          const { data: dspData } = await supabase
+            .from('dsps')
+            .select('id, dsp_code, dsp_name')
+            .eq('id', contact.dsp_id)
+            .single();
+          dsp = dspData;
+        }
+
+        // Get station info if station_id exists
+        let station = null;
+        if (contact.station_id) {
+          const { data: stationData } = await supabase
+            .from('stations')
+            .select('id, station_code')
+            .eq('id', contact.station_id)
+            .single();
+          station = stationData;
+        }
+
+        // Get market info if market_id exists
+        let market = null;
+        if (contact.market_id) {
+          const { data: marketData } = await supabase
+            .from('markets')
+            .select('id, name')
+            .eq('id', contact.market_id)
+            .single();
+          market = marketData;
+        }
+
+        return {
+          ...contact,
+          interaction_count: interactionCount || 0,
+          dsp,
+          station,
+          market,
+        };
+      })
+    );
+
     return {
-      data: contactsWithCount || [],
+      data: enrichedContacts,
       meta: {
         total: count || 0,
         page,
