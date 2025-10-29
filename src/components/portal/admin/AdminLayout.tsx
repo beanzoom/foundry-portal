@@ -28,6 +28,7 @@ interface AdminNavItem {
   icon: React.ReactNode;
   route: string;
   description?: string;
+  disabled?: boolean;
 }
 
 export function AdminLayout() {
@@ -90,13 +91,6 @@ export function AdminLayout() {
       description: 'Contact form submissions'
     },
     {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: <BarChart3 className="w-5 h-5" />,
-      route: paths.admin.analytics,
-      description: 'View portal analytics'
-    },
-    {
       id: 'calculator-submissions',
       label: 'Calculator Reports',
       icon: <Calculator className="w-5 h-5" />,
@@ -104,18 +98,27 @@ export function AdminLayout() {
       description: 'View savings calculations'
     },
     {
-      id: 'content',
-      label: 'Content',
-      icon: <FileText className="w-5 h-5" />,
-      route: paths.admin.content,
-      description: 'Manage static content'
-    },
-    {
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="w-5 h-5" />,
       route: paths.admin.settings,
       description: 'Portal configuration'
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      icon: <BarChart3 className="w-5 h-5" />,
+      route: paths.admin.analytics,
+      description: 'View portal analytics',
+      disabled: true
+    },
+    {
+      id: 'content',
+      label: 'Content',
+      icon: <FileText className="w-5 h-5" />,
+      route: paths.admin.content,
+      description: 'Manage static content',
+      disabled: true
     }
   ];
 
@@ -172,19 +175,30 @@ export function AdminLayout() {
         <div className="px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-6 overflow-x-auto">
             {adminNavItems.map(item => (
-              <Link
-                key={item.id}
-                to={item.route}
-                className={cn(
-                  "flex items-center gap-2 py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors",
-                  isActiveRoute(item.route)
-                    ? "border-purple-600 text-purple-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-purple-300"
-                )}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
+              item.disabled ? (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 py-4 px-1 border-b-2 border-transparent text-sm font-medium whitespace-nowrap text-gray-300 cursor-not-allowed"
+                  title={`${item.label} - Coming soon`}
+                >
+                  {item.icon}
+                  {item.label}
+                </div>
+              ) : (
+                <Link
+                  key={item.id}
+                  to={item.route}
+                  className={cn(
+                    "flex items-center gap-2 py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors",
+                    isActiveRoute(item.route)
+                      ? "border-purple-600 text-purple-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-purple-300"
+                  )}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              )
             ))}
           </nav>
         </div>
