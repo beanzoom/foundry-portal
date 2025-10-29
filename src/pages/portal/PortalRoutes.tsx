@@ -30,6 +30,7 @@ import { PortalRegisterRedirect } from '@/pages/portal/PortalRegisterRedirect';
 import { PortalAuth } from '@/pages/portal/PortalAuth';
 import { PortalTerms } from '@/pages/portal/PortalTerms';
 import { PortalUnauthorized } from '@/pages/portal/PortalUnauthorized';
+import { FoundryLanding } from '@/pages/public/FoundryLanding';
 
 // Admin Layout and pages
 import { AdminLayout } from '@/components/portal/admin/AdminLayout';
@@ -206,6 +207,9 @@ export function PortalRoutes() {
           )
         } />
         
+        {/* Foundry landing page - public marketing page */}
+        <Route path="/foundry" element={<FoundryLanding />} />
+
         {/* Auth page handles both sign-in and sign-up */}
         <Route path="/auth" element={<PortalAuth />} />
         {/* Register redirects to auth preserving query params for referrals */}
