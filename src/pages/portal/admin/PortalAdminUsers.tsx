@@ -85,7 +85,7 @@ export function PortalAdminUsers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'active' | 'inactive'>('all');
-  const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set(['portal_admin', 'portal_member', 'portal_investor']));
+  const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set(['portal_member', 'admin', 'super_admin', 'investor', 'system_admin']));
   const [selectedUser, setSelectedUser] = useState<PortalUser | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -100,135 +100,45 @@ export function PortalAdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      // Get ALL portal users: automatic (system admins) + explicit (portal_memberships) + portal_member role in profiles
-      
-      // 1. Get system admins (they automatically have portal admin access)
-      const { data: systemAdmins, error: systemError } = await supabase
-        .from('system_user_assignments')
-        .select(`
-          user_id,
-          system_role,
-          assigned_at
-        `)
-        .in('system_role', ['super_admin', 'admin'])
-        .eq('is_active', true);
-
-      if (systemError) throw systemError;
-
-      // Get profiles for system admins (with error handling)
-      const systemAdminProfiles = [];
-      if (systemAdmins) {
-        for (const admin of systemAdmins) {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', admin.user_id)
-              .single();
-            if (profile) {
-              systemAdminProfiles.push({ ...admin, profiles: profile });
-            }
-          } catch (err) {
-            // Skip this profile if it fails
-            console.warn(`Failed to fetch profile for admin ${admin.user_id}:`, err);
-          }
-        }
-      }
-
-      // 2. Get explicit portal memberships
-      const { data: portalMembers, error: portalError } = await supabase
-        .from('portal_memberships')
-        .select(`
-          user_id,
-          portal_role,
-          joined_at,
-          subscription_tier,
-          is_active
-        `)
-        .eq('is_active', true);
-
-      if (portalError) throw portalError;
-
-      // Get profiles for portal members (with error handling)
-      const portalMemberProfiles = [];
-      if (portalMembers) {
-        for (const member of portalMembers) {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', member.user_id)
-              .single();
-            if (profile) {
-              portalMemberProfiles.push({ ...member, profiles: profile });
-            }
-          } catch (err) {
-            // Skip this profile if it fails
-            console.warn(`Failed to fetch profile for member ${member.user_id}:`, err);
-          }
-        }
-      }
-
-      // 3. Get users with portal_member role directly from profiles
-      const { data: portalProfiles, error: profileError } = await supabase
+      // Get ALL portal users directly from profiles table
+      // Portal users have roles: portal_member, admin, super_admin, investor, system_admin
+      const { data: profilesData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'portal_member');
+        .in('role', ['portal_member', 'admin', 'super_admin', 'investor', 'system_admin']);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+        throw profileError;
+      }
 
-      // 4. Combine and deduplicate users
-      const userMap = new Map();
+      // Fetch primary business for each user (for company_name)
+      const usersWithBusinesses = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          try {
+            const { data: business } = await supabase
+              .from('businesses')
+              .select('company_name')
+              .eq('user_id', profile.id)
+              .eq('is_primary', true)
+              .single();
 
-      // Add system admins as portal admins
-      (systemAdminProfiles || []).forEach(admin => {
-        if (admin.profiles) {
-          userMap.set(admin.profiles.id, {
-            ...admin.profiles,
-            role: 'portal_admin',
-            portal_joined_at: admin.assigned_at,
-            subscription_tier: 'premium',
-            access_source: 'System Admin (Automatic)'
-          });
-        }
-      });
-
-      // Add explicit portal members from portal_memberships table
-      (portalMemberProfiles || []).forEach(member => {
-        if (member.profiles) {
-          // Only add if not already added as system admin
-          if (!userMap.has(member.profiles.id)) {
-            userMap.set(member.profiles.id, {
-              ...member.profiles,
-              role: member.portal_role || 'portal_member',
-              portal_joined_at: member.joined_at,
-              subscription_tier: member.subscription_tier,
-              access_source: 'Portal Membership'
-            });
+            return {
+              ...profile,
+              company_name: business?.company_name || null
+            };
+          } catch (err) {
+            return {
+              ...profile,
+              company_name: null
+            };
           }
-        }
-      });
-
-      // Add portal members from profiles table (users who registered via portal)
-      (portalProfiles || []).forEach(profile => {
-        // Only add if not already added
-        if (!userMap.has(profile.id)) {
-          userMap.set(profile.id, {
-            ...profile,
-            role: 'portal_member',
-            portal_joined_at: profile.created_at,
-            subscription_tier: 'basic',
-            access_source: 'Portal Registration'
-          });
-        }
-      });
-
-      // Convert map to array
-      const profilesData = Array.from(userMap.values());
+        })
+      );
 
       // Fetch activity data for each user (with error handling)
       const usersWithActivity = [];
-      for (const user of profilesData) {
+      for (const user of usersWithBusinesses) {
         try {
           const activity = await fetchUserActivity(user.id);
           usersWithActivity.push({ ...user, activity });
@@ -341,59 +251,20 @@ export function PortalAdminUsers() {
   };
 
   const fetchMetrics = async () => {
-    // Get system admins (automatic portal admins)
-    const { data: systemAdmins } = await supabase
-      .from('system_user_assignments')
-      .select(`
-        user_id,
-        system_role
-      `)
-      .in('system_role', ['super_admin', 'admin'])
-      .eq('is_active', true);
-
-    // Get explicit portal users
-    const { data: portalMembers } = await supabase
-      .from('portal_memberships')
-      .select(`
-        user_id,
-        portal_role,
-        joined_at
-      `)
-      .eq('is_active', true);
-
-    // Get portal members from profiles table
-    const { data: portalProfiles } = await supabase
+    // Get all portal users from profiles
+    const { data: allProfiles } = await supabase
       .from('profiles')
       .select('id, created_at, last_sign_in_at, role')
-      .eq('role', 'portal_member');
+      .in('role', ['portal_member', 'admin', 'super_admin', 'investor', 'system_admin']);
 
-    // Combine users (dedupe by user_id)
     const allUsersMap = new Map();
-    
-    // Add system admins as portal admins
-    (systemAdmins || []).forEach(admin => {
-      allUsersMap.set(admin.user_id, {
-        ...admin,
-        portal_role: 'portal_admin'
-      });
-    });
 
-    // Add explicit portal members
-    (portalMembers || []).forEach(member => {
-      if (!allUsersMap.has(member.user_id)) {
-        allUsersMap.set(member.user_id, {
-          ...member,
-          portal_role: member.portal_role || 'portal_member'
-        });
-      }
-    });
-
-    // Add portal members from profiles table
-    (portalProfiles || []).forEach(profile => {
+    // Add all portal users
+    (allProfiles || []).forEach(profile => {
       if (!allUsersMap.has(profile.id)) {
         allUsersMap.set(profile.id, {
           user_id: profile.id,
-          portal_role: 'portal_member',
+          role: profile.role,
           created_at: profile.created_at,
           last_sign_in_at: profile.last_sign_in_at
         });
@@ -414,10 +285,10 @@ export function PortalAdminUsers() {
       u.last_sign_in_at && new Date(u.last_sign_in_at) > thirtyDaysAgo
     ).length;
 
-    // Count by role
-    const portalAdmins = allUsers.filter(u => u.portal_role === 'portal_admin').length;
-    const portalMembersCount = allUsers.filter(u => u.portal_role === 'portal_member').length;
-    const portalInvestors = allUsers.filter(u => u.portal_role === 'portal_investor').length;
+    // Count by role (using actual role names from profiles)
+    const portalAdmins = allUsers.filter(u => u.role === 'admin' || u.role === 'super_admin' || u.role === 'system_admin').length;
+    const portalMembersCount = allUsers.filter(u => u.role === 'portal_member').length;
+    const portalInvestors = allUsers.filter(u => u.role === 'investor').length;
 
     setMetrics({
       total_users: allUsers.length,
@@ -483,9 +354,11 @@ export function PortalAdminUsers() {
 
   const getRoleBadgeColor = (role: string): string => {
     switch (role) {
-      case 'portal_admin':
+      case 'super_admin':
+      case 'system_admin':
+      case 'admin':
         return 'bg-purple-100 text-purple-700';
-      case 'portal_investor':
+      case 'investor':
         return 'bg-blue-100 text-blue-700';
       case 'portal_member':
       default:
@@ -494,8 +367,8 @@ export function PortalAdminUsers() {
   };
 
   const formatRole = (role: string): string => {
-    return role.replace('portal_', '').replace('_', ' ').charAt(0).toUpperCase() + 
-           role.replace('portal_', '').replace('_', ' ').slice(1);
+    const formatted = role.replace(/_/g, ' ');
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   };
 
   return (
