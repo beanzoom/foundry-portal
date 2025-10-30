@@ -164,14 +164,14 @@ export function PortalRoutes() {
     return null;
   }
 
-  // If on foundry subdomain, redirect to /foundry route
-  if (isFoundrySubdomain && window.location.pathname === '/') {
-    return <Navigate to="/foundry" replace />;
+  // If on foundry subdomain, show the Foundry landing page directly at root
+  if (isFoundrySubdomain) {
+    return <FoundryLanding />;
   }
 
   // For non-subdomain: Only render if we're on a /portal path
   // For subdomain: Always render (we handle all routes)
-  if (!isSubdomain && !isFoundrySubdomain && !window.location.pathname.startsWith('/portal')) {
+  if (!isSubdomain && !window.location.pathname.startsWith('/portal')) {
     return null;
   }
 
