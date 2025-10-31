@@ -87,6 +87,7 @@ export function PortalSurveyTake() {
   const [completing, setCompleting] = useState(false);
   const [validPreview, setValidPreview] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
@@ -139,16 +140,18 @@ export function PortalSurveyTake() {
   const loadSurvey = async () => {
     if (!user || !surveyId) return;
 
+    setLoading(true);
+    setLoadError(null);
+
     try {
       // Check if user is admin for preview mode
-      const { data: userRole } = await supabase
+      const { data: userRoles } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .in('role', ['admin', 'super_admin'])
-        .single();
-      
-      const isAdmin = !!userRole;
+        .in('role', ['admin', 'super_admin']);
+
+      const isAdmin = userRoles && userRoles.length > 0;
 
       // Load survey details - admins can see drafts, others only published
       let surveyQuery = supabase
@@ -192,21 +195,49 @@ export function PortalSurveyTake() {
       // Skip response creation in preview mode
       if (!validPreview) {
         // Create or get existing response
-        const { data: responseData, error: responseError } = await supabase
+        // First, try to get existing response
+        const { data: existingResponse } = await supabase
           .from('portal_survey_responses')
-          .upsert({
-            survey_id: surveyId,
-            user_id: user.id,
-            is_test_response: false, // Regular response
-            started_at: new Date().toISOString()
-          }, {
-            onConflict: 'survey_id,user_id',
-            ignoreDuplicates: false
-          })
-          .select()
-          .single();
+          .select('*')
+          .eq('survey_id', surveyId)
+          .eq('user_id', user.id)
+          .maybeSingle();
 
+        let responseData;
+        if (existingResponse) {
+          // Update existing response
+          const { data, error } = await supabase
+            .from('portal_survey_responses')
+            .update({
+              started_at: existingResponse.started_at || new Date().toISOString(),
+              last_saved_at: new Date().toISOString()
+            })
+            .eq('id', existingResponse.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          responseData = data;
+        } else {
+          // Create new response
+          const { data, error } = await supabase
+            .from('portal_survey_responses')
+            .insert({
+              survey_id: surveyId,
+              user_id: user.id,
+              is_test_response: false,
+              started_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          responseData = data;
+        }
+
+        const responseError = !responseData ? new Error('Failed to create response') : null;
         if (responseError) throw responseError;
+
         setResponse(responseData);
 
         // If survey is completed, show view-only notification
@@ -250,12 +281,7 @@ export function PortalSurveyTake() {
 
     } catch (error) {
       console.error('Error loading survey:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load survey. Please try again.",
-        variant: "destructive",
-      });
-      navigate(portalRoute('/surveys'));
+      setLoadError(error instanceof Error ? error.message : 'Failed to load survey. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -495,10 +521,21 @@ export function PortalSurveyTake() {
     }
   };
 
-  if (loading) {
+  // Show error state if loading failed
+  if (loadError) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Error Loading Survey</h2>
+        <p className="text-gray-600 mb-4">{loadError}</p>
+        <div className="space-x-4">
+          <Button onClick={() => { setLoadError(null); setLoading(true); loadSurvey(); }}>
+            Try Again
+          </Button>
+          <Button variant="outline" onClick={() => navigate(portalRoute('/surveys'))}>
+            Back to Surveys
+          </Button>
+        </div>
       </div>
     );
   }
@@ -522,8 +559,51 @@ export function PortalSurveyTake() {
     );
   }
 
-  // Only show "not found" after loading is complete
-  if (!loading && (!survey || questions.length === 0)) {
+  // Show loading state with skeleton while data is being fetched
+  // Only show "not found" when loading is complete AND we confirmed no survey exists
+  if (loading || (!survey && !loadError)) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6 animate-pulse">
+        {/* Header skeleton */}
+        <div className="space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+
+        {/* Progress skeleton */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="h-2 bg-gray-200 rounded"></div>
+          </CardContent>
+        </Card>
+
+        {/* Question skeleton */}
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-5/6"></div>
+            <div className="space-y-2">
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Navigation skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="h-10 bg-gray-200 rounded w-24"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
+          <div className="h-10 bg-gray-200 rounded w-24"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show "not found" after loading is complete AND no error occurred AND survey is definitely null
+  if (!survey || questions.length === 0) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
