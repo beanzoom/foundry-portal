@@ -298,6 +298,7 @@ export function WavePlanningShowcase() {
 
   // Wave Planning state
   const [activeResourceTab, setActiveResourceTab] = useState<'drivers' | 'vehicles'>('drivers');
+  const [depInfoExpanded, setDepInfoExpanded] = useState(false);
 
   // Pool Planning state
   const [poolRequests, setPoolRequests] = useState<PoolRequest>({
@@ -1238,15 +1239,31 @@ export function WavePlanningShowcase() {
                       <Alert className="mb-3 py-2 px-3">
                         <Info className="h-3 w-3" />
                         <AlertDescription className="text-xs leading-relaxed">
-                          <strong>DEP Score:</strong> Driver Experience Preference ranking (0-15). Higher scores = better match based on driver's preference order:
-                          <div className="mt-1 space-y-0.5 ml-2">
-                            <div><strong>R</strong> - Route familiarity (same route code)</div>
-                            <div><strong>W</strong> - Wave preference (same wave)</div>
-                            <div><strong>P</strong> - Pad familiarity (same pad number)</div>
-                            <div><strong>T</strong> - Vehicle Type experience (same type)</div>
-                            <div><strong>V</strong> - Vehicle preference (specific vehicle)</div>
+                          <div className="flex items-center justify-between">
+                            <span>
+                              <strong>DEP Score:</strong> Driver Experience Preference ranking (0-15). Higher scores = better match.
+                            </span>
+                            <button
+                              onClick={() => setDepInfoExpanded(!depInfoExpanded)}
+                              className="text-blue-600 hover:text-blue-800 underline ml-2 flex-shrink-0"
+                            >
+                              {depInfoExpanded ? 'less' : 'more'}
+                            </button>
                           </div>
-                          Each driver has a unique DEP order (e.g., "RWPVT" prioritizes Route first, then Wave, etc.)
+                          {depInfoExpanded && (
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <div className="space-y-0.5 ml-2">
+                                <div><strong>R</strong> - Route familiarity (same route code)</div>
+                                <div><strong>W</strong> - Wave preference (same wave)</div>
+                                <div><strong>P</strong> - Pad familiarity (same pad number)</div>
+                                <div><strong>T</strong> - Vehicle Type experience (same type)</div>
+                                <div><strong>V</strong> - Vehicle preference (specific vehicle)</div>
+                              </div>
+                              <div className="mt-2">
+                                Each driver has a unique DEP order (e.g., "RWPVT" prioritizes Route first, then Wave, etc.)
+                              </div>
+                            </div>
+                          )}
                         </AlertDescription>
                       </Alert>
 
