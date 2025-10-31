@@ -16,24 +16,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Import demo components from existing demo
-// REMOVED: App demo slides are not part of portal
-// import { FleetManagementDemoSlide } from '@/pages/bridge/modules/developer/demo/FleetManagementDemoSlide';
-// import { MaintenanceDemoSlide } from '@/pages/bridge/modules/developer/demo/MaintenanceDemoSlide';
-// import { DriverCenterSlide } from '@/pages/bridge/modules/developer/demo/DriverCenterSlide';
-// import { OwnerDashboard } from '@/pages/bridge/modules/developer/demo/OwnerDashboard';
+// Import demo components
+import { FleetManagementDemoSlide } from './demos/FleetManagementDemoSlide';
+import { MaintenanceDemoSlide } from './demos/MaintenanceDemoSlide';
+import { DriverCenterSlide } from './demos/DriverCenterSlide';
+import { OwnerDashboard } from './demos/OwnerDashboard';
 import { WavePlanningShowcase } from './WavePlanningShowcase';
-
-// Placeholder component for removed demos
-const DemoPlaceholder = () => (
-  <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-    <div className="text-center p-8">
-      <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-      <h3 className="text-lg font-semibold text-gray-700 mb-2">Feature Demo</h3>
-      <p className="text-gray-500">Interactive demo available in full application</p>
-    </div>
-  </div>
-);
 
 interface FeatureExplorerProps {
   featureId: string;
@@ -47,7 +35,7 @@ const FEATURE_CONFIGS: Record<string, any> = {
     title: 'Fleet Operations Command Center',
     icon: Truck,
     color: 'blue',
-    demoComponent: DemoPlaceholder,
+    demoComponent: FleetManagementDemoSlide,
     sections: [
       {
         id: 'fleet-ops-tracking',
@@ -109,7 +97,7 @@ const FEATURE_CONFIGS: Record<string, any> = {
     title: 'Intelligent Maintenance Management',
     icon: Wrench,
     color: 'orange',
-    demoComponent: DemoPlaceholder,
+    demoComponent: MaintenanceDemoSlide,
     sections: [
       {
         id: 'maintenance-preventive',
@@ -174,7 +162,7 @@ const FEATURE_CONFIGS: Record<string, any> = {
     title: 'Driver Experience Platform',
     icon: Users,
     color: 'teal',
-    demoComponent: DemoPlaceholder,
+    demoComponent: DriverCenterSlide,
     sections: [
       {
         id: 'driver-portal',
@@ -220,7 +208,7 @@ const FEATURE_CONFIGS: Record<string, any> = {
     title: 'Operations Intelligence Hub',
     icon: BarChart3,
     color: 'indigo',
-    demoComponent: DemoPlaceholder,
+    demoComponent: OwnerDashboard,
     sections: [
       {
         id: 'intelligence-analytics',

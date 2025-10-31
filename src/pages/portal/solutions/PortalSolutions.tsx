@@ -108,6 +108,7 @@ export default function PortalSolutions() {
   const [userJourney, setUserJourney] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [visitedFeatures, setVisitedFeatures] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'hero' | 'explore'>('hero');
 
   // Parallax scroll effects
   const { scrollY } = useScroll();
