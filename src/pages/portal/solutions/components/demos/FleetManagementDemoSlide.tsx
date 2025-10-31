@@ -7,10 +7,9 @@ import {
   User, MoreVertical, Activity, Fuel, Wrench, Calendar,
   TrendingUp, Battery, Navigation, FileText
 } from 'lucide-react';
-import { EnhancedFleetCard } from '@/pages/admin/dev/dialog-exemplars/components/EnhancedFleetCard';
+import { EnhancedFleetCard } from './EnhancedFleetCard';
 import { FleetDetailsDemoDialog } from './FleetDetailsDemoDialog';
-// Removed: Portal solutions component no longer available
-// import { SimulatedFleetEditDialog } from '@/pages/portal/solutions/components/SimulatedFleetEditDialog';
+import { SimulatedFleetEditDialog } from '../SimulatedFleetEditDialog';
 
 export function FleetManagementDemoSlide() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -222,18 +221,13 @@ export function FleetManagementDemoSlide() {
       )}
 
       {/* Fleet Edit Dialog */}
-      {/* Removed: Portal solutions component no longer available */}
       {editDialogOpen && (
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-gray-500 text-center">
-              Fleet edit dialog removed (was portal component)
-            </p>
-            <Button onClick={() => setEditDialogOpen(false)} className="mt-4 w-full">
-              Close
-            </Button>
-          </CardContent>
-        </Card>
+        <SimulatedFleetEditDialog
+          isOpen={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          vehicle={demoVehicle}
+          maintenanceRecords={[]}
+        />
       )}
     </div>
   );

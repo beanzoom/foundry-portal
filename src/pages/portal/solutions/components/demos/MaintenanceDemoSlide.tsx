@@ -7,9 +7,7 @@ import {
   Activity, TrendingUp, FileText, BarChart3, Shield,
   DollarSign, Gauge, History
 } from 'lucide-react';
-// Removed: Portal solutions component no longer available
-// import { SimulatedVehicleCard } from '@/pages/portal/solutions/components/SimulatedVehicleCard';
-import { MaintenanceRecord } from '@/features/maintenance/types';
+import { SimulatedVehicleCard } from '../SimulatedVehicleCard';
 
 export function MaintenanceDemoSlide() {
 
@@ -30,7 +28,7 @@ export function MaintenanceDemoSlide() {
   };
 
   // Mock maintenance records - 5 issues (3 needing fixes, 2 scheduled maintenance)
-  const mockMaintenanceRecords: MaintenanceRecord[] = [
+  const mockMaintenanceRecords: any[] = [
     {
       id: 'maint-1',
       vehicle_id: demoVehicle.id,

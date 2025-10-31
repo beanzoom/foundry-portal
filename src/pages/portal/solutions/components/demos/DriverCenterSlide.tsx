@@ -7,7 +7,7 @@ import {
   Calendar, AlertTriangle, Truck, BarChart3, Settings,
   Shield, Navigation, Phone, MessageSquare, Award
 } from 'lucide-react';
-import DriverCenterWireframe from '../feature-wireframes/driver-center/DriverCenterWireframe';
+// Wireframe removed - using simple placeholder instead
 
 export function DriverCenterSlide() {
   const features = [
@@ -72,10 +72,26 @@ export function DriverCenterSlide() {
             Empowering drivers with personalized tools and real-time information
           </p>
           
-          {/* Embedded Wireframe */}
-          <div className="border rounded-lg overflow-hidden shadow-lg">
-            <div className="transform scale-90 origin-top">
-              <DriverCenterWireframe />
+          {/* Driver Portal Preview */}
+          <div className="border rounded-lg overflow-hidden shadow-lg bg-gradient-to-br from-blue-50 to-purple-50 p-8">
+            <div className="text-center space-y-4">
+              <User className="w-16 h-16 mx-auto text-blue-600" />
+              <h4 className="text-2xl font-bold">Driver Portal</h4>
+              <p className="text-gray-600">Personalized dashboard with route assignments, performance metrics, and real-time updates</p>
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="bg-white p-4 rounded-lg shadow">
+                  <Route className="w-8 h-8 mx-auto text-green-600 mb-2" />
+                  <p className="text-sm font-medium">My Routes</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow">
+                  <Star className="w-8 h-8 mx-auto text-yellow-600 mb-2" />
+                  <p className="text-sm font-medium">Performance</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow">
+                  <Calendar className="w-8 h-8 mx-auto text-purple-600 mb-2" />
+                  <p className="text-sm font-medium">Schedule</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

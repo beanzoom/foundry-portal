@@ -16,12 +16,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Import demo components
+// Import showcase components
+import { WavePlanningShowcase } from './WavePlanningShowcase';
+import { FeatureShowcase } from './FeatureShowcase';
 import { FleetManagementDemoSlide } from './demos/FleetManagementDemoSlide';
 import { MaintenanceDemoSlide } from './demos/MaintenanceDemoSlide';
 import { DriverCenterSlide } from './demos/DriverCenterSlide';
 import { OwnerDashboard } from './demos/OwnerDashboard';
-import { WavePlanningShowcase } from './WavePlanningShowcase';
 
 interface FeatureExplorerProps {
   featureId: string;
