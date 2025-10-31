@@ -121,20 +121,35 @@ const generateDrivers = (): Driver[] => {
 
     usedNames.add(fullName);
 
-    // Distribute vehicle qualifications more realistically to ensure we can fill all pools
+    // Distribute vehicle qualifications realistically - most drivers can drive most vehicle types
     let vehicleTypes: string[] = [];
-    if (i < 10) {
-      vehicleTypes = ['EDV', 'PRIME', 'STANDARD']; // Multi-qualified (versatile drivers)
-    } else if (i < 20) {
-      vehicleTypes = ['EDV', 'PRIME']; // Can do EDV and PRIME
-    } else if (i < 30) {
-      vehicleTypes = ['STANDARD', 'XL']; // Can do STANDARD and XL
-    } else if (i < 40) {
-      vehicleTypes = ['EDV']; // EDV only
-    } else if (i < 50) {
-      vehicleTypes = ['STANDARD']; // STANDARD only
+    if (i < 30) {
+      // 50% of drivers are qualified for all vehicle types (most versatile)
+      vehicleTypes = ['EDV', 'PRIME', 'STANDARD', 'XL'];
+    } else if (i < 45) {
+      // 25% of drivers qualified for 3 types (rotate which 3)
+      const combinations = [
+        ['EDV', 'PRIME', 'STANDARD'],
+        ['EDV', 'PRIME', 'XL'],
+        ['EDV', 'STANDARD', 'XL'],
+        ['PRIME', 'STANDARD', 'XL']
+      ];
+      vehicleTypes = combinations[i % 4];
+    } else if (i < 55) {
+      // 16.7% of drivers qualified for 2 types (rotate which 2)
+      const combinations = [
+        ['EDV', 'PRIME'],
+        ['EDV', 'STANDARD'],
+        ['EDV', 'XL'],
+        ['PRIME', 'STANDARD'],
+        ['PRIME', 'XL'],
+        ['STANDARD', 'XL']
+      ];
+      vehicleTypes = combinations[i % 6];
     } else {
-      vehicleTypes = ['XL', 'PRIME']; // XL and PRIME
+      // Only 8.3% of drivers are single-qualified (rare cases)
+      const types = ['EDV', 'PRIME', 'STANDARD', 'XL'];
+      vehicleTypes = [types[i % 4]];
     }
 
     // Create realistic standby distribution (0-14 days)
@@ -281,6 +296,9 @@ export function WavePlanningShowcase() {
   const [vehicles, setVehicles] = useState<Vehicle[]>(generateVehicles());
   const [draggedItem, setDraggedItem] = useState<{ type: 'driver' | 'vehicle'; id: string } | null>(null);
 
+  // Wave Planning state
+  const [activeResourceTab, setActiveResourceTab] = useState<'drivers' | 'vehicles'>('drivers');
+
   // Pool Planning state
   const [poolRequests, setPoolRequests] = useState<PoolRequest>({
     EDV: 15,
@@ -405,8 +423,15 @@ export function WavePlanningShowcase() {
 
     let assignedDriverIds = new Set<string>();
 
-    // First pass: Try to assign drivers to pools based on qualifications
-    Object.entries(poolRequests).forEach(([poolType, requestedCount]) => {
+    // Calculate available qualified drivers for each pool type to determine scarcity
+    const poolScarcity = Object.entries(poolRequests).map(([poolType, requestedCount]) => {
+      const qualifiedCount = sortedDrivers.filter(d => d.vehicleTypes.includes(poolType)).length;
+      const ratio = qualifiedCount / requestedCount; // Lower ratio = more scarce
+      return { poolType, requestedCount, qualifiedCount, ratio };
+    }).sort((a, b) => a.ratio - b.ratio); // Process scarce pools first
+
+    // First pass: Assign drivers to pools in order of scarcity
+    poolScarcity.forEach(({ poolType, requestedCount }) => {
       let assigned = 0;
 
       for (const driver of sortedDrivers) {
@@ -422,7 +447,7 @@ export function WavePlanningShowcase() {
     });
 
     // Second pass: Fill any remaining slots with multi-qualified drivers
-    Object.entries(poolRequests).forEach(([poolType, requestedCount]) => {
+    poolScarcity.forEach(({ poolType, requestedCount }) => {
       const currentAssigned = newAssignments[poolType].length;
 
       if (currentAssigned < requestedCount) {
@@ -470,17 +495,19 @@ export function WavePlanningShowcase() {
 
   // Wave Planning: Auto-assign drivers with DEP scoring
   const autoAssignDriversWithDEP = () => {
-    const availableDrivers = drivers.filter(d => d.assignedPool && !d.assignedRoute);
+    // Get all available drivers (not just those assigned to pools in Phase 1)
+    const availableDrivers = drivers.filter(d => !d.assignedRoute);
     const unassignedRoutes = routes.filter(r => !r.driver);
 
     let updatedRoutes = [...routes];
     let updatedDrivers = [...drivers];
     let assignments = 0;
+    const assignedDriverIds = new Set<string>();
 
     for (const route of unassignedRoutes) {
       // Find qualified drivers and score them
       const qualifiedDrivers = availableDrivers
-        .filter(d => d.vehicleTypes.includes(route.serviceType) && !d.assignedRoute)
+        .filter(d => d.vehicleTypes.includes(route.serviceType) && !assignedDriverIds.has(d.id))
         .map(d => ({
           driver: d,
           depScore: calculateDEPScore(d, route),
@@ -505,8 +532,8 @@ export function WavePlanningShowcase() {
           d.id === bestMatch.id ? { ...d, assignedRoute: route.routeCode } : d
         );
 
-        // Mark driver as assigned
-        bestMatch.assignedRoute = route.routeCode;
+        // Mark driver as assigned in our tracking set
+        assignedDriverIds.add(bestMatch.id);
         assignments++;
       }
     }
@@ -641,6 +668,44 @@ export function WavePlanningShowcase() {
     }
 
     setDraggedItem(null);
+  };
+
+  // Remove driver from route
+  const removeDriverFromRoute = (routeId: string) => {
+    const route = routes.find(r => r.id === routeId);
+    if (!route || !route.driver) return;
+
+    // Find driver by name and unassign
+    const driver = drivers.find(d => d.name === route.driver);
+    if (driver) {
+      setDrivers(prev => prev.map(d =>
+        d.id === driver.id ? { ...d, assignedRoute: undefined } : d
+      ));
+    }
+
+    // Update route status
+    setRoutes(prev => prev.map(r =>
+      r.id === routeId ? { ...r, driver: undefined, status: r.vehicle ? 'warning' : 'incomplete' } : r
+    ));
+  };
+
+  // Remove vehicle from route
+  const removeVehicleFromRoute = (routeId: string) => {
+    const route = routes.find(r => r.id === routeId);
+    if (!route || !route.vehicle) return;
+
+    // Find vehicle by name and unassign
+    const vehicle = vehicles.find(v => v.name === route.vehicle);
+    if (vehicle) {
+      setVehicles(prev => prev.map(v =>
+        v.id === vehicle.id ? { ...v, assignedRoute: undefined } : v
+      ));
+    }
+
+    // Update route status
+    setRoutes(prev => prev.map(r =>
+      r.id === routeId ? { ...r, vehicle: undefined, status: r.driver ? 'warning' : 'incomplete' } : r
+    ));
   };
 
   return (
@@ -1055,8 +1120,14 @@ export function WavePlanningShowcase() {
                           <th className="text-left p-2">Type</th>
                           <th className="text-left p-2">Time</th>
                           <th className="text-left p-2">Packages</th>
-                          <th className="text-left p-2">Vehicle</th>
-                          <th className="text-left p-2">Driver</th>
+                          <th className={cn(
+                            "text-left p-2 transition-colors",
+                            activeResourceTab === 'vehicles' && "bg-blue-50 border-l-2 border-r-2 border-blue-300"
+                          )}>Vehicle</th>
+                          <th className={cn(
+                            "text-left p-2 transition-colors",
+                            activeResourceTab === 'drivers' && "bg-purple-50 border-l-2 border-r-2 border-purple-300"
+                          )}>Driver</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1074,22 +1145,58 @@ export function WavePlanningShowcase() {
                             <td className="p-2">{route.serviceType}</td>
                             <td className="p-2">{route.padTime}</td>
                             <td className="p-2">{route.packages}</td>
-                            <td className="p-2">
-                              <div
-                                className="min-h-[30px] px-2 py-1 border-2 border-dashed border-gray-300 rounded"
-                                onDrop={(e) => handleRouteDrop(e, route.id)}
-                                onDragOver={handleDragOver}
-                              >
-                                {route.vehicle || <span className="text-gray-400 text-xs">Drop vehicle</span>}
+                            <td className={cn(
+                              "p-2 transition-colors",
+                              activeResourceTab === 'vehicles' && "bg-blue-50/30"
+                            )}>
+                              <div className="flex items-center gap-1">
+                                <div
+                                  className="flex-1 min-h-[30px] px-2 py-1 border-2 border-dashed border-gray-300 rounded flex items-center"
+                                  onDrop={(e) => handleRouteDrop(e, route.id)}
+                                  onDragOver={handleDragOver}
+                                >
+                                  {route.vehicle ? (
+                                    <span className="text-xs flex-1">{route.vehicle}</span>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs flex-1">Drop vehicle</span>
+                                  )}
+                                </div>
+                                {route.vehicle && (
+                                  <button
+                                    onClick={() => removeVehicleFromRoute(route.id)}
+                                    className="p-1 hover:bg-red-100 rounded transition-colors"
+                                    title="Remove vehicle"
+                                  >
+                                    <X className="w-3 h-3 text-red-600" />
+                                  </button>
+                                )}
                               </div>
                             </td>
-                            <td className="p-2">
-                              <div
-                                className="min-h-[30px] px-2 py-1 border-2 border-dashed border-gray-300 rounded"
-                                onDrop={(e) => handleRouteDrop(e, route.id)}
-                                onDragOver={handleDragOver}
-                              >
-                                {route.driver || <span className="text-gray-400 text-xs">Drop driver</span>}
+                            <td className={cn(
+                              "p-2 transition-colors",
+                              activeResourceTab === 'drivers' && "bg-purple-50/30"
+                            )}>
+                              <div className="flex items-center gap-1">
+                                <div
+                                  className="flex-1 min-h-[30px] px-2 py-1 border-2 border-dashed border-gray-300 rounded flex items-center"
+                                  onDrop={(e) => handleRouteDrop(e, route.id)}
+                                  onDragOver={handleDragOver}
+                                >
+                                  {route.driver ? (
+                                    <span className="text-xs flex-1">{route.driver}</span>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs flex-1">Drop driver</span>
+                                  )}
+                                </div>
+                                {route.driver && (
+                                  <button
+                                    onClick={() => removeDriverFromRoute(route.id)}
+                                    className="p-1 hover:bg-red-100 rounded transition-colors"
+                                    title="Remove driver"
+                                  >
+                                    <X className="w-3 h-3 text-red-600" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1108,7 +1215,11 @@ export function WavePlanningShowcase() {
                   <CardTitle className="text-sm">Resources</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0 p-4">
-                  <Tabs defaultValue="drivers" className="h-full flex flex-col">
+                  <Tabs
+                    defaultValue="drivers"
+                    className="h-full flex flex-col"
+                    onValueChange={(value) => setActiveResourceTab(value as 'drivers' | 'vehicles')}
+                  >
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="drivers">Drivers</TabsTrigger>
                       <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
@@ -1123,6 +1234,22 @@ export function WavePlanningShowcase() {
                         <Users className="w-4 h-4" />
                         Smart Assign Drivers
                       </Button>
+
+                      <Alert className="mb-3 py-2 px-3">
+                        <Info className="h-3 w-3" />
+                        <AlertDescription className="text-xs leading-relaxed">
+                          <strong>DEP Score:</strong> Driver Experience Preference ranking (0-15). Higher scores = better match based on driver's preference order:
+                          <div className="mt-1 space-y-0.5 ml-2">
+                            <div><strong>R</strong> - Route familiarity (same route code)</div>
+                            <div><strong>W</strong> - Wave preference (same wave)</div>
+                            <div><strong>P</strong> - Pad familiarity (same pad number)</div>
+                            <div><strong>T</strong> - Vehicle Type experience (same type)</div>
+                            <div><strong>V</strong> - Vehicle preference (specific vehicle)</div>
+                          </div>
+                          Each driver has a unique DEP order (e.g., "RWPVT" prioritizes Route first, then Wave, etc.)
+                        </AlertDescription>
+                      </Alert>
+
                       <div className="text-sm text-gray-600 mb-2">
                         Available Drivers ({drivers.filter(d => !d.assignedRoute).length} of 60)
                       </div>
@@ -1138,7 +1265,7 @@ export function WavePlanningShowcase() {
                                 onDragStart={(e) => handleDragStart(e, 'driver', driver.id)}
                                 className="p-2 bg-white border rounded cursor-move hover:shadow-md"
                               >
-                                <div className="flex items-center justify-between">
+                                <div className="space-y-2">
                                   <div>
                                     <p className="text-xs font-medium">{driver.name}</p>
                                     <div className="flex items-center gap-1 mt-1">
@@ -1151,6 +1278,23 @@ export function WavePlanningShowcase() {
                                         </Badge>
                                       )}
                                     </div>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {driver.vehicleTypes.map(type => (
+                                      <Badge
+                                        key={type}
+                                        variant="outline"
+                                        className={cn(
+                                          "text-[10px] px-1 py-0",
+                                          type === 'EDV' && "bg-green-50 text-green-700 border-green-300",
+                                          type === 'PRIME' && "bg-blue-50 text-blue-700 border-blue-300",
+                                          type === 'STANDARD' && "bg-gray-50 text-gray-700 border-gray-300",
+                                          type === 'XL' && "bg-purple-50 text-purple-700 border-purple-300"
+                                        )}
+                                      >
+                                        {type}
+                                      </Badge>
+                                    ))}
                                   </div>
                                 </div>
                               </div>
