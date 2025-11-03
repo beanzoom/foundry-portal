@@ -70,6 +70,18 @@ import { SimpleTest } from '@/pages/portal/admin/SimpleTest';
 import { DeveloperSettings } from '@/pages/portal/admin/settings/DeveloperSettings';
 import { MarketingSettings } from '@/pages/portal/admin/settings/MarketingSettings';
 
+// Section Layouts
+import { ContentSectionLayout } from '@/pages/portal/admin/content/ContentSectionLayout';
+import { UsersSectionLayout } from '@/pages/portal/admin/users/UsersSectionLayout';
+import { DataSectionLayout } from '@/pages/portal/admin/data/DataSectionLayout';
+import { CommunicationsSectionLayout } from '@/pages/portal/admin/communications/CommunicationsSectionLayout';
+
+// Placeholder pages for new features
+import { UserActivity } from '@/pages/portal/admin/users/UserActivity';
+import { SurveyAnalytics } from '@/pages/portal/admin/data/SurveyAnalytics';
+import { EventAnalytics } from '@/pages/portal/admin/data/EventAnalytics';
+import { EngagementMetrics } from '@/pages/portal/admin/data/EngagementMetrics';
+
 // Communications components
 import { CommunicationsDashboard, EmailTemplates as CommunicationsTemplates, NotificationRules, RecipientLists } from '@/pages/portal/admin/communications';
 import EmailQueue from '@/pages/portal/admin/communications/EmailQueue';
@@ -424,14 +436,60 @@ export function PortalRoutes() {
             }
           />
 
-          {/* Admin routes */}
-          <Route path="admin" element={
-            <PortalProtectedRoute adminOnly={true}>
-              <AdminLayout><Outlet /></AdminLayout>
-            </PortalProtectedRoute>
-          }>
-            <Route index element={<PortalAdminDashboard />} />
-            <Route path="dashboard" element={<PortalAdminDashboard />} />
+        </Route>
+
+        {/* Admin routes - OUTSIDE PortalLayout wrapper for subdomain routing */}
+        <Route path="/admin" element={
+          <PortalProtectedRoute adminOnly={true}>
+            <AdminLayout />
+          </PortalProtectedRoute>
+        }>
+          {/* Dashboard */}
+          <Route index element={<PortalAdminDashboard />} />
+          <Route path="dashboard" element={<PortalAdminDashboard />} />
+
+          {/* Content Management Routes */}
+          <Route path="content" element={<ContentSectionLayout />}>
+            <Route path="updates" element={<PortalAdminUpdates />} />
+            <Route path="surveys" element={<PortalAdminSurveys />} />
+            <Route path="surveys/new" element={<PortalAdminSurveyBuilder />} />
+            <Route path="surveys/:surveyId/edit" element={<PortalAdminSurveyBuilder />} />
+            <Route path="surveys/:surveyId/results" element={<PortalAdminSurveyResults />} />
+            <Route path="events" element={<EventsAdminDashboard />} />
+            <Route path="events/new" element={<EventForm />} />
+            <Route path="events/:id/edit" element={<EventForm />} />
+            <Route path="solutions" element={<PortalAdminSolutionsEditor />} />
+          </Route>
+
+          {/* Users & Community Routes */}
+          <Route path="users" element={<UsersSectionLayout />}>
+            <Route path="directory" element={<PortalAdminUsersNew />} />
+            <Route path="activity" element={<UserActivity />} />
+            <Route path="referrals" element={<PortalAdminReferrals />} />
+            <Route path="contact-submissions" element={<PortalAdminContactSubmissions />} />
+            <Route path="contacts" element={<PortalAdminContacts />} />
+            <Route path="contacts/analytics" element={<PortalAdminContacts />} />
+            <Route path="contacts/activity" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/overview" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/contacts" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/markets" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/stations" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/dsps" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/regions" element={<PortalAdminContacts />} />
+            <Route path="contacts/organization/dsps/:dspId" element={<DSPDetailView />} />
+          </Route>
+
+          {/* Data & Reports Routes */}
+          <Route path="data" element={<DataSectionLayout />}>
+            <Route path="analytics" element={<PortalAdminAnalytics />} />
+            <Route path="survey-analytics" element={<SurveyAnalytics />} />
+            <Route path="calculator-submissions" element={<CalculatorSubmissions />} />
+            <Route path="event-analytics" element={<EventAnalytics />} />
+            <Route path="engagement" element={<EngagementMetrics />} />
+          </Route>
+
+            {/* Old routes - keep for backward compatibility during transition */}
             <Route path="users" element={<PortalAdminUsersNew />} />
             <Route path="content" element={<PortalAdminContent />} />
             <Route path="surveys" element={<PortalAdminSurveys />} />
@@ -446,16 +504,16 @@ export function PortalRoutes() {
             <Route path="solutions" element={<PortalAdminSolutionsEditor />} />
             <Route path="analytics" element={<PortalAdminAnalytics />} />
 
-            {/* Communications Routes - standalone with Settings layout wrapper */}
-            <Route path="communications" element={<SettingsLayout />}>
-              <Route index element={<CommunicationsDashboard />} />
-              <Route path="templates" element={<CommunicationsTemplates />} />
-              <Route path="rules" element={<NotificationRules />} />
-              <Route path="recipient-lists" element={<RecipientLists />} />
-              <Route path="activity" element={<EmailLogs />} />
-              <Route path="queue" element={<EmailQueue />} />
-              <Route path="testing" element={<TestEmail />} />
-            </Route>
+          {/* Communications Routes */}
+          <Route path="communications" element={<CommunicationsSectionLayout />}>
+            <Route index element={<CommunicationsDashboard />} />
+            <Route path="templates" element={<CommunicationsTemplates />} />
+            <Route path="rules" element={<NotificationRules />} />
+            <Route path="recipient-lists" element={<RecipientLists />} />
+            <Route path="activity" element={<EmailLogs />} />
+            <Route path="queue" element={<EmailQueue />} />
+            <Route path="testing" element={<TestEmail />} />
+          </Route>
 
             {/* Settings with nested routes */}
             <Route path="settings" element={<SettingsLayout />}>
@@ -484,14 +542,22 @@ export function PortalRoutes() {
               <Route path="database" element={<DatabaseSettings />} />
               <Route path="notifications" element={<NotificationCenter />} />
               <Route path="developer" element={<DeveloperSettings />} />
+
+              {/* Documentation routes - now in Settings */}
+              <Route path="docs">
+                <Route index element={<DocDashboard />} />
+                <Route path=":docId" element={<DocViewer />} />
+              </Route>
             </Route>
-            <Route path="contact-submissions" element={<PortalAdminContactSubmissions />} />
+
+            {/* Test routes - remain at top level */}
             <Route path="test-email" element={<TestEmail />} />
             <Route path="test-edge-function" element={<TestEdgeFunction />} />
             <Route path="test-logging" element={<SimpleTest />} />
-            {/* Reports */}
+
+            {/* Old routes - keep for backward compatibility */}
+            <Route path="contact-submissions" element={<PortalAdminContactSubmissions />} />
             <Route path="reports/calculator-submissions" element={<CalculatorSubmissions />} />
-            {/* Contacts with nested routes */}
             <Route path="contacts">
               <Route index element={<PortalAdminContacts />} />
               <Route path="analytics" element={<PortalAdminContacts />} />
@@ -505,13 +571,12 @@ export function PortalRoutes() {
               <Route path="organization/regions" element={<PortalAdminContacts />} />
               <Route path="organization/dsps/:dspId" element={<DSPDetailView />} />
             </Route>
-            {/* Documentation routes */}
             <Route path="docs">
               <Route index element={<DocDashboard />} />
               <Route path=":docId" element={<DocViewer />} />
             </Route>
           </Route>
-        </Route>
+
       </Routes>
     );
   }
@@ -728,16 +793,21 @@ export function PortalRoutes() {
           }
         />
 
-        {/* Admin routes */}
-        <Route path="admin" element={
-          <PortalProtectedRoute adminOnly={true}>
-            <AdminLayout><Outlet /></AdminLayout>
-          </PortalProtectedRoute>
-        }>
-          <Route index element={<PortalAdminDashboard />} />
-          <Route path="dashboard" element={<PortalAdminDashboard />} />
-          <Route path="users" element={<PortalAdminUsersNew />} />
-          <Route path="content" element={<PortalAdminContent />} />
+      </Route>
+
+      {/* Admin routes - OUTSIDE PortalLayout, uses AdminLayout instead */}
+      <Route path="admin" element={
+        <PortalProtectedRoute adminOnly={true}>
+          <AdminLayout />
+        </PortalProtectedRoute>
+      }>
+        {/* Dashboard */}
+        <Route index element={<PortalAdminDashboard />} />
+        <Route path="dashboard" element={<PortalAdminDashboard />} />
+
+        {/* Content Management Routes */}
+        <Route path="content" element={<ContentSectionLayout />}>
+          <Route path="updates" element={<PortalAdminUpdates />} />
           <Route path="surveys" element={<PortalAdminSurveys />} />
           <Route path="surveys/new" element={<PortalAdminSurveyBuilder />} />
           <Route path="surveys/:surveyId/edit" element={<PortalAdminSurveyBuilder />} />
@@ -745,24 +815,50 @@ export function PortalRoutes() {
           <Route path="events" element={<EventsAdminDashboard />} />
           <Route path="events/new" element={<EventForm />} />
           <Route path="events/:id/edit" element={<EventForm />} />
-          <Route path="referrals" element={<PortalAdminReferrals />} />
-          <Route path="updates" element={<PortalAdminUpdates />} />
           <Route path="solutions" element={<PortalAdminSolutionsEditor />} />
+        </Route>
+
+        {/* Users & Community Routes */}
+        <Route path="users" element={<UsersSectionLayout />}>
+          <Route path="directory" element={<PortalAdminUsersNew />} />
+          <Route path="activity" element={<UserActivity />} />
+          <Route path="referrals" element={<PortalAdminReferrals />} />
+          <Route path="contact-submissions" element={<PortalAdminContactSubmissions />} />
+          <Route path="contacts" element={<PortalAdminContacts />} />
+          <Route path="contacts/analytics" element={<PortalAdminContacts />} />
+          <Route path="contacts/activity" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/overview" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/contacts" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/markets" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/stations" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/dsps" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/regions" element={<PortalAdminContacts />} />
+          <Route path="contacts/organization/dsps/:dspId" element={<DSPDetailView />} />
+        </Route>
+
+        {/* Data & Reports Routes */}
+        <Route path="data" element={<DataSectionLayout />}>
           <Route path="analytics" element={<PortalAdminAnalytics />} />
+          <Route path="survey-analytics" element={<SurveyAnalytics />} />
+          <Route path="calculator-submissions" element={<CalculatorSubmissions />} />
+          <Route path="event-analytics" element={<EventAnalytics />} />
+          <Route path="engagement" element={<EngagementMetrics />} />
+        </Route>
 
-          {/* Communications Routes - standalone with Settings layout wrapper */}
-          <Route path="communications" element={<SettingsLayout />}>
-            <Route index element={<CommunicationsDashboard />} />
-            <Route path="templates" element={<CommunicationsTemplates />} />
-            <Route path="rules" element={<NotificationRules />} />
-            <Route path="recipient-lists" element={<RecipientLists />} />
-            <Route path="activity" element={<EmailLogs />} />
-            <Route path="queue" element={<EmailQueue />} />
-            <Route path="testing" element={<TestEmail />} />
-          </Route>
+        {/* Communications Routes */}
+        <Route path="communications" element={<CommunicationsSectionLayout />}>
+          <Route index element={<CommunicationsDashboard />} />
+          <Route path="templates" element={<CommunicationsTemplates />} />
+          <Route path="rules" element={<NotificationRules />} />
+          <Route path="recipient-lists" element={<RecipientLists />} />
+          <Route path="activity" element={<EmailLogs />} />
+          <Route path="queue" element={<EmailQueue />} />
+          <Route path="testing" element={<TestEmail />} />
+        </Route>
 
-          {/* Settings with nested routes */}
-          <Route path="settings" element={<SettingsLayout />}>
+        {/* Settings with nested routes */}
+        <Route path="settings" element={<SettingsLayout />}>
             <Route index element={<GeneralSettings />} />
 
             {/* Marketing Settings */}
@@ -816,8 +912,6 @@ export function PortalRoutes() {
           </Route>
         </Route>
 
-      </Route>
-      
       {/* Default redirects - outside layout */}
       <Route path="home" element={<Navigate to={portalRoute('/dashboard')} />} />
       {/* Don't redirect root "/" to portal - let main app handle it */}

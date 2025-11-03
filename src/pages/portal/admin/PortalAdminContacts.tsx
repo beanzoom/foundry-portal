@@ -65,16 +65,17 @@ export function PortalAdminContacts() {
     setActiveTab(value);
     switch (value) {
       case 'dashboard':
-        navigate(portalRoute('/admin/contacts'));
+        navigate(portalRoute('/admin/users/contacts'));
         break;
       case 'organization':
-        navigate(portalRoute('/admin/contacts/organization'));
+        // Navigate to contacts sub-tab by default (no overview tab)
+        navigate(portalRoute('/admin/users/contacts/organization/contacts'));
         break;
       case 'analytics':
-        navigate(portalRoute('/admin/contacts/analytics'));
+        navigate(portalRoute('/admin/users/contacts/analytics'));
         break;
       case 'activity':
-        navigate(portalRoute('/admin/contacts/activity'));
+        navigate(portalRoute('/admin/users/contacts/activity'));
         break;
     }
   };

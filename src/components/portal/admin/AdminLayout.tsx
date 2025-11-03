@@ -3,33 +3,12 @@ import { Link, useLocation, Outlet, Navigate } from 'react-router-dom';
 import { usePortal } from '@/contexts/PortalContext';
 import { usePortalPaths } from '@/hooks/usePortalPaths';
 import { usePortalRole } from '@/hooks/usePortalRole';
-import {
-  LayoutDashboard,
-  Megaphone,
-  ClipboardList,
-  Calendar,
-  Settings,
-  BarChart3,
-  ArrowLeft,
-  Shield,
-  FileText,
-  UserCheck,
-  MessageSquare,
-  Calculator,
-  UserPlus
-} from 'lucide-react';
+import { ArrowLeft, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-
-interface AdminNavItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  route: string;
-  description?: string;
-  disabled?: boolean;
-}
+import { adminNavigation, isNavGroup, isPathActive } from './navigation/navigation-config';
+import { AdminDropdownMenu } from './navigation/AdminDropdownMenu';
+import { AdminBreadcrumbs } from './navigation/AdminBreadcrumbs';
 
 export function AdminLayout() {
   const { portalUser, isLoading } = usePortal();
@@ -38,93 +17,6 @@ export function AdminLayout() {
 
   // Check if user is admin using centralized role checking
   const { isAdmin } = usePortalRole();
-
-  // Admin navigation items
-  const adminNavItems: AdminNavItem[] = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard className="w-5 h-5" />,
-      route: paths.admin.dashboard,
-      description: 'Overview and statistics'
-    },
-    {
-      id: 'updates',
-      label: 'Updates',
-      icon: <Megaphone className="w-5 h-5" />,
-      route: paths.admin.updates,
-      description: 'Manage announcements and news'
-    },
-    {
-      id: 'surveys',
-      label: 'Surveys',
-      icon: <ClipboardList className="w-5 h-5" />,
-      route: paths.admin.surveys,
-      description: 'Create and manage surveys'
-    },
-    {
-      id: 'events',
-      label: 'Events',
-      icon: <Calendar className="w-5 h-5" />,
-      route: paths.admin.events,
-      description: 'Manage events and registrations'
-    },
-    {
-      id: 'referrals',
-      label: 'Referrals',
-      icon: <UserPlus className="w-5 h-5" />,
-      route: `${paths.admin.dashboard.replace('/dashboard', '/referrals')}`,
-      description: 'Manage user referrals'
-    },
-    {
-      id: 'contacts',
-      label: 'Contacts',
-      icon: <UserCheck className="w-5 h-5" />,
-      route: paths.admin.contacts,
-      description: 'DSP contact tracking'
-    },
-    {
-      id: 'contact-submissions',
-      label: 'Contact Forms',
-      icon: <MessageSquare className="w-5 h-5" />,
-      route: paths.admin.contactSubmissions || `${paths.admin.dashboard.replace('/dashboard', '/contact-submissions')}`,
-      description: 'Contact form submissions'
-    },
-    {
-      id: 'calculator-submissions',
-      label: 'Calculator Reports',
-      icon: <Calculator className="w-5 h-5" />,
-      route: `${paths.admin.dashboard.replace('/dashboard', '/reports/calculator-submissions')}`,
-      description: 'View savings calculations'
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings className="w-5 h-5" />,
-      route: paths.admin.settings,
-      description: 'Portal configuration'
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: <BarChart3 className="w-5 h-5" />,
-      route: paths.admin.analytics,
-      description: 'View portal analytics',
-      disabled: true
-    },
-    {
-      id: 'content',
-      label: 'Content',
-      icon: <FileText className="w-5 h-5" />,
-      route: paths.admin.content,
-      description: 'Manage static content',
-      disabled: true
-    }
-  ];
-
-  const isActiveRoute = (route: string) => {
-    return location.pathname === route || location.pathname.startsWith(route + '/');
-  };
 
   // Loading state
   if (isLoading) {
@@ -141,7 +33,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Admin Header */}
       <div className="bg-gradient-to-r from-purple-50 to-gray-50 border-b border-purple-200 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -171,32 +63,26 @@ export function AdminLayout() {
       </div>
 
       {/* Admin Navigation Tabs */}
-      <div className="bg-white border-b">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-6 overflow-x-auto">
-            {adminNavItems.map(item => (
-              item.disabled ? (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-2 py-4 px-1 border-b-2 border-transparent text-sm font-medium whitespace-nowrap text-gray-300 cursor-not-allowed"
-                  title={`${item.label} - Coming soon`}
-                >
-                  {item.icon}
-                  {item.label}
-                </div>
+      <div className="bg-white border-b overflow-visible">
+        <div className="px-4 sm:px-6 lg:px-8 overflow-visible">
+          <nav className="flex space-x-6 overflow-x-auto overflow-y-visible">
+            {adminNavigation.map(section => (
+              isNavGroup(section) ? (
+                <AdminDropdownMenu key={section.id} section={section} />
               ) : (
                 <Link
-                  key={item.id}
-                  to={item.route}
+                  key={section.id}
+                  to={section.path}
                   className={cn(
                     "flex items-center gap-2 py-4 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors",
-                    isActiveRoute(item.route)
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2",
+                    isPathActive(location.pathname, section.path)
                       ? "border-purple-600 text-purple-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-purple-300"
                   )}
                 >
-                  {item.icon}
-                  {item.label}
+                  <section.icon className="w-5 h-5" />
+                  {section.label}
                 </Link>
               )
             ))}
@@ -204,9 +90,15 @@ export function AdminLayout() {
         </div>
       </div>
 
+      {/* Breadcrumbs */}
+      <div className="bg-gray-50 border-b">
+        <div className="px-4 sm:px-6 lg:px-8 py-3">
+          <AdminBreadcrumbs />
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
-        {console.log('[AdminLayout] Rendering Outlet for path:', location.pathname)}
         <Outlet />
       </div>
     </div>

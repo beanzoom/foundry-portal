@@ -104,12 +104,11 @@ export function HierarchyManager() {
     if (path.includes('/organization/stations')) return 'stations';
     if (path.includes('/organization/markets')) return 'markets';
     if (path.includes('/organization/regions')) return 'regions';
-    if (path.includes('/organization/overview')) return 'overview';
-    if (path.includes('/organization')) return 'overview';
-    return 'overview';
+    if (path.includes('/organization')) return 'contacts'; // Default to contacts instead of overview
+    return 'contacts';
   };
-  
-  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'dsps' | 'stations' | 'markets' | 'regions'>(getActiveTabFromPath());
+
+  const [activeTab, setActiveTab] = useState<'contacts' | 'dsps' | 'stations' | 'markets' | 'regions'>(getActiveTabFromPath());
   
   // Update active tab when URL changes
   useEffect(() => {
@@ -785,10 +784,8 @@ export function HierarchyManager() {
         onValueChange={(value) => {
           setActiveTab(value as any);
           // Navigate to the corresponding URL using portalRoute
-          const baseUrl = portalRoute('/admin/contacts/organization');
-          if (value === 'overview') {
-            navigate(`${baseUrl}/overview`);
-          } else if (value === 'contacts') {
+          const baseUrl = portalRoute('/admin/users/contacts/organization');
+          if (value === 'contacts') {
             navigate(`${baseUrl}/contacts`);
           } else if (value === 'markets') {
             navigate(`${baseUrl}/markets`);
@@ -801,11 +798,7 @@ export function HierarchyManager() {
           }
         }}
       >
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview" className="gap-2">
-            <LayoutGrid className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="contacts" className="gap-2">
             <Users className="h-4 w-4" />
             Contacts
@@ -832,11 +825,6 @@ export function HierarchyManager() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <HierarchyOverview />
-        </TabsContent>
-        
         {/* Contacts Tab */}
         <TabsContent value="contacts" className="space-y-4">
           <ContactList />
@@ -1337,7 +1325,7 @@ export function HierarchyManager() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => navigate(portalRoute(`/admin/contacts/organization/dsps/${dsp.id}`))}>
+                                <DropdownMenuItem onClick={() => navigate(portalRoute(`/admin/users/contacts/organization/dsps/${dsp.id}`))}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>

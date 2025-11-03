@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,11 +14,14 @@ import {
   Calendar,
   TrendingUp,
   ChevronDown,
-  Shield
+  Shield,
+  Activity
 } from 'lucide-react';
+import { fetchUserActivityMetrics, getEngagementLevel, type UserActivityMetrics } from '@/services/user-analytics.service';
 import { formatDistanceToNow } from 'date-fns';
 import { UserDetailModalEnhanced } from '@/components/portal/admin/UserDetailModalEnhanced';
 import { PromoteUserDialog } from '@/components/portal/admin/PromoteUserDialog';
+import { UserAvatar } from '@/components/portal/admin/UserAvatar';
 import { usePortal } from '@/contexts/PortalContext';
 import {
   Select,
@@ -88,10 +92,12 @@ interface ReferrerOption {
 
 export function PortalAdminUsersNew() {
   const { portalUser } = usePortal();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserAcquisitionData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserAcquisitionData[]>([]);
   const [metrics, setMetrics] = useState<OverallMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activityMetrics, setActivityMetrics] = useState<Map<string, UserActivityMetrics>>(new Map());
 
   // Modal states
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -99,6 +105,7 @@ export function PortalAdminUsersNew() {
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all'); // 'all' | 'super_admin' | 'system_admin' | 'admin' | 'investor'
   const [sourceFilter, setSourceFilter] = useState<string>('all'); // 'all' | 'marketing' | 'referral' | 'direct'
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
   const [referrerFilter, setReferrerFilter] = useState<string>('all');
@@ -117,7 +124,7 @@ export function PortalAdminUsersNew() {
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm, sourceFilter, campaignFilter, referrerFilter, dateRangeFilter]);
+  }, [users, searchTerm, roleFilter, sourceFilter, campaignFilter, referrerFilter, dateRangeFilter]);
 
   const fetchUsers = async () => {
     try {
@@ -136,6 +143,14 @@ export function PortalAdminUsersNew() {
 
       // Extract unique campaigns and referrers for filters
       extractFilterOptions(data || []);
+
+      // Fetch activity metrics in parallel
+      fetchUserActivityMetrics().then(metrics => {
+        setActivityMetrics(metrics);
+      }).catch(error => {
+        console.error('Error fetching activity metrics:', error);
+        // Don't fail the whole page if activity metrics fail
+      });
 
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -227,6 +242,11 @@ export function PortalAdminUsersNew() {
       );
     }
 
+    // Role filter
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
     // Source type filter
     if (sourceFilter !== 'all') {
       filtered = filtered.filter(user => user.acquisition_source === sourceFilter);
@@ -271,19 +291,23 @@ export function PortalAdminUsersNew() {
 
   const getRoleBadgeColor = (role: string): string => {
     switch (role) {
-      case 'portal_admin':
+      case 'super_admin':
         return 'bg-purple-100 text-purple-700';
-      case 'portal_investor':
+      case 'system_admin':
+        return 'bg-purple-100 text-purple-700';
+      case 'admin':
         return 'bg-blue-100 text-blue-700';
-      case 'portal_member':
+      case 'investor':
+        return 'bg-green-100 text-green-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
   };
 
   const formatRole = (role: string): string => {
-    return role.replace('portal_', '').replace('_', ' ').charAt(0).toUpperCase() +
-           role.replace('portal_', '').replace('_', ' ').slice(1);
+    return role.split('_').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
   };
 
   const getSourceBadgeColor = (source: string): string => {
@@ -300,13 +324,14 @@ export function PortalAdminUsersNew() {
 
   const clearAllFilters = () => {
     setSearchTerm('');
+    setRoleFilter('all');
     setSourceFilter('all');
     setCampaignFilter('all');
     setReferrerFilter('all');
     setDateRangeFilter('all');
   };
 
-  const hasActiveFilters = searchTerm || sourceFilter !== 'all' || campaignFilter !== 'all' ||
+  const hasActiveFilters = searchTerm || roleFilter !== 'all' || sourceFilter !== 'all' || campaignFilter !== 'all' ||
                           referrerFilter !== 'all' || dateRangeFilter !== 'all';
 
   return (
@@ -391,6 +416,21 @@ export function PortalAdminUsersNew() {
 
             {/* Filter Row */}
             <div className="flex flex-wrap gap-3">
+              {/* Role Filter */}
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <Shield className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="system_admin">System Admin</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="investor">Investor</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Source Type Filter */}
               <Select value={sourceFilter} onValueChange={setSourceFilter}>
                 <SelectTrigger className="w-[180px]">
@@ -486,8 +526,9 @@ export function PortalAdminUsersNew() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DSP</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Engagement</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Campaign/Referrer</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -501,10 +542,22 @@ export function PortalAdminUsersNew() {
                     onClick={() => setSelectedUserId(user.user_id)}
                   >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-sm">
-                        {user.first_name && user.last_name
-                          ? `${user.first_name} ${user.last_name}`
-                          : user.first_name || user.last_name || 'Unknown'}
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          firstName={user.first_name}
+                          lastName={user.last_name}
+                          email={user.email}
+                          size="md"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/users/activity?user_id=${user.user_id}`);
+                          }}
+                        />
+                        <div className="font-medium text-sm">
+                          {user.first_name && user.last_name
+                            ? `${user.first_name} ${user.last_name}`
+                            : user.first_name || user.last_name || 'Unknown'}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
@@ -517,18 +570,53 @@ export function PortalAdminUsersNew() {
                       {user.dsp_name || '-'}
                     </td>
                     <td className="px-4 py-3">
+                      {(() => {
+                        const activity = activityMetrics.get(user.user_id);
+                        if (!activity) {
+                          return <Badge variant="outline" className="text-gray-500">-</Badge>;
+                        }
+                        const level = getEngagementLevel(activity.engagement_score);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span>{level.icon}</span>
+                            <div>
+                              <div className="text-sm font-medium">{activity.engagement_score}</div>
+                              <Badge variant="outline" className={level.color}>
+                                {level.label}
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const activity = activityMetrics.get(user.user_id);
+                        if (!activity) {
+                          return <span className="text-xs text-gray-400">No data</span>;
+                        }
+                        return (
+                          <div className="text-xs space-y-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-gray-500">📋</span>
+                              <span>{activity.surveys_completed} surveys</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-gray-500">📅</span>
+                              <span>{activity.events_registered} events</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-gray-500">📢</span>
+                              <span>{activity.updates_acknowledged} updates</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-4 py-3">
                       <Badge className={getSourceBadgeColor(user.acquisition_source)}>
                         {user.acquisition_source}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {user.acquisition_source === 'marketing' && user.campaign_name ? (
-                        <span className="text-green-700">{user.campaign_name}</span>
-                      ) : user.acquisition_source === 'referral' && user.referrer_name ? (
-                        <span className="text-blue-700">{user.referrer_name}</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={user.profile_complete ? "default" : "outline"}>
@@ -549,6 +637,17 @@ export function PortalAdminUsersNew() {
                           }}
                         >
                           View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/users/activity?user_id=${user.user_id}`);
+                          }}
+                          title="View activity timeline"
+                        >
+                          <Activity className="h-4 w-4" />
                         </Button>
                         {isSuperAdmin && user.role !== 'user' && (
                           <Button

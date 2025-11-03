@@ -199,7 +199,7 @@ export function UserDetailModalEnhanced({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] min-h-[600px] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -235,7 +235,7 @@ export function UserDetailModalEnhanced({
               </TabsList>
 
               {/* Profile Tab */}
-              <TabsContent value="profile" className="space-y-4">
+              <TabsContent value="profile" className="space-y-4 min-h-[400px]">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -365,7 +365,7 @@ export function UserDetailModalEnhanced({
               </TabsContent>
 
               {/* Acquisition Tab */}
-              <TabsContent value="acquisition" className="space-y-4">
+              <TabsContent value="acquisition" className="space-y-4 min-h-[400px]">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -474,7 +474,7 @@ export function UserDetailModalEnhanced({
               </TabsContent>
 
               {/* Activity Tab */}
-              <TabsContent value="activity" className="space-y-4">
+              <TabsContent value="activity" className="space-y-4 min-h-[400px]">
                 {activity && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
@@ -529,7 +529,7 @@ export function UserDetailModalEnhanced({
               </TabsContent>
 
               {/* Settings/Actions Tab */}
-              <TabsContent value="settings" className="space-y-4">
+              <TabsContent value="settings" className="space-y-4 min-h-[400px]">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-red-600">Danger Zone</CardTitle>
