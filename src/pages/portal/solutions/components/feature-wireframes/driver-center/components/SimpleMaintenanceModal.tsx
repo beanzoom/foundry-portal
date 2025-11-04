@@ -35,10 +35,10 @@ export function SimpleMaintenanceModal({ isOpen, onClose }: SimpleMaintenanceMod
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-white rounded-t-2xl w-full max-w-md mx-auto animate-slide-up">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start pt-12">
+      <div className="bg-white rounded-2xl w-full max-w-md mx-auto shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between rounded-t-2xl">
           <h2 className="text-lg font-semibold">Report Maintenance Issue</h2>
           <Button
             variant="ghost"

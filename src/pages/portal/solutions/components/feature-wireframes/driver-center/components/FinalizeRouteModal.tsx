@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Gauge, CheckCircle } from 'lucide-react';
+import { X, Gauge, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface FinalizeRouteModalProps {
   isOpen: boolean;
@@ -17,9 +14,11 @@ export function FinalizeRouteModal({ isOpen, onClose, currentMileage, routeId }:
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  if (!isOpen) return null;
+
   const handleSubmit = () => {
     if (!newMileage || parseInt(newMileage) <= currentMileage) return;
-    
+
     setIsSubmitting(true);
     // Simulate API call
     setTimeout(() => {
@@ -29,81 +28,118 @@ export function FinalizeRouteModal({ isOpen, onClose, currentMileage, routeId }:
         onClose();
         setIsComplete(false);
         setNewMileage('');
-      }, 2000);
+      }, 1500);
     }, 1000);
   };
 
+  const milesDriven = newMileage && parseInt(newMileage) > currentMileage
+    ? parseInt(newMileage) - currentMileage
+    : 0;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        {!isComplete ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Finalize Route {routeId}</DialogTitle>
-              <DialogDescription>
-                Enter the current odometer reading to complete today's route.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Starting Mileage</Label>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Gauge className="h-4 w-4" />
-                  <span>{currentMileage.toLocaleString()} miles</span>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start pt-12">
+      <div className="bg-white rounded-2xl w-full max-w-md mx-auto shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-semibold">Finalize Route {routeId}</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-4">
+          {isComplete ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="text-center space-y-2">
+                <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
                 </div>
+                <p className="font-semibold text-green-900">Route Finalized!</p>
+                <p className="text-sm text-green-700">
+                  Route {routeId} has been completed successfully.
+                </p>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="newMileage">Ending Mileage</Label>
-                <Input
-                  id="newMileage"
-                  type="number"
-                  placeholder="Enter current odometer reading"
-                  value={newMileage}
-                  onChange={(e) => setNewMileage(e.target.value)}
-                  min={currentMileage + 1}
-                />
-                {newMileage && parseInt(newMileage) <= currentMileage && (
-                  <p className="text-sm text-red-500">
-                    Ending mileage must be greater than starting mileage
-                  </p>
+            </div>
+          ) : (
+            <>
+              {/* Info Banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  Enter the current odometer reading to complete today's route.
+                </p>
+              </div>
+
+              {/* Form */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Starting Mileage
+                  </label>
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <Gauge className="h-5 w-5 text-gray-600" />
+                    <span className="font-semibold">{currentMileage.toLocaleString()} miles</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Ending Mileage <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={newMileage}
+                    onChange={(e) => setNewMileage(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    placeholder="Enter current odometer reading"
+                    min={currentMileage + 1}
+                  />
+                  {newMileage && parseInt(newMileage) <= currentMileage && (
+                    <p className="text-sm text-red-500 mt-1">
+                      Ending mileage must be greater than starting mileage
+                    </p>
+                  )}
+                </div>
+
+                {milesDriven > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700">
+                      Miles driven today: <span className="font-semibold text-green-900">
+                        {milesDriven.toLocaleString()} miles
+                      </span>
+                    </p>
+                  </div>
                 )}
               </div>
-              
-              {newMileage && parseInt(newMileage) > currentMileage && (
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <p className="text-sm text-muted-foreground">
-                    Miles driven today: <span className="font-semibold text-foreground">
-                      {(parseInt(newMileage) - currentMileage).toLocaleString()}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmit} 
-                disabled={!newMileage || parseInt(newMileage) <= currentMileage || isSubmitting}
-              >
-                {isSubmitting ? 'Finalizing...' : 'Finalize Route'}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <div className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Route Finalized!</h3>
-            <p className="text-muted-foreground">
-              Route {routeId} has been completed successfully.
-            </p>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSubmit}
+                  disabled={!newMileage || parseInt(newMileage) <= currentMileage || isSubmitting}
+                >
+                  {isSubmitting ? 'Finalizing...' : 'Finalize Route'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
