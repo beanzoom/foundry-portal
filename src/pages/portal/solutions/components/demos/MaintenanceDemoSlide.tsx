@@ -185,14 +185,12 @@ export function MaintenanceDemoSlide() {
           </p>
 
           <div className="max-w-md mx-auto">
-            {/* Removed: Portal solutions component no longer available */}
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-gray-500 text-center">
-                  Demo vehicle card removed (was portal component)
-                </p>
-              </CardContent>
-            </Card>
+            <SimulatedVehicleCard
+              vehicle={demoVehicle}
+              maintenanceRecords={mockMaintenanceRecords}
+              showMaintenanceCount={true}
+              isDemo={true}
+            />
           </div>
         </div>
 
