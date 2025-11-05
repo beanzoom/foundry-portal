@@ -118,13 +118,33 @@ export function PortalRegister() {
           .from('portal_memberships')
           .insert({
             user_id: authData.user.id,
-            member_type: 'dsp_owner',
+            portal_role: 'dsp_owner',
             status: 'active',
-            onboarding_completed: false
+            is_active: true
           });
 
         if (membershipError) {
           console.error('Portal membership error:', membershipError);
+          // Don't throw - this is not critical for initial registration
+          // User can still access portal and complete profile
+        }
+
+        // Add to user_acquisition_details for tracking
+        const { error: acquisitionError } = await supabase
+          .from('user_acquisition_details')
+          .insert({
+            user_id: authData.user.id,
+            email: formData.email,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            role: 'portal_member',
+            acquisition_source: 'portal_registration',
+            referral_status: 'pending'
+          });
+
+        if (acquisitionError) {
+          console.error('User acquisition tracking error:', acquisitionError);
+          // Don't throw - this is just for analytics
         }
 
         setRegistrationSuccess(true);
