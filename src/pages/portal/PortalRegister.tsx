@@ -54,6 +54,7 @@ export function PortalRegister() {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: undefined, // Disable email confirmation
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
@@ -127,16 +128,16 @@ export function PortalRegister() {
         }
 
         setRegistrationSuccess(true);
-        
+
         toast({
           title: "Registration successful!",
-          description: "Please check your email to verify your account.",
+          description: "You can now sign in to your account.",
         });
 
-        // Redirect to auth page after 3 seconds
+        // Redirect to auth page after 2 seconds
         setTimeout(() => {
-          navigate('/auth?portal=true&message=Please verify your email and sign in to complete your profile');
-        }, 3000);
+          navigate('/auth?portal=true&message=Registration successful! Please sign in to continue');
+        }, 2000);
       }
     } catch (err: any) {
       console.error('Registration error:', err);
@@ -157,12 +158,12 @@ export function PortalRegister() {
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Registration Successful!</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Welcome to DSP Foundry!</h2>
               <p className="text-gray-600">
-                We've sent a verification email to <strong>{formData.email}</strong>.
+                Your account has been created for <strong>{formData.email}</strong>.
               </p>
               <p className="text-sm text-gray-500">
-                Please check your inbox and verify your email address, then sign in to complete your profile setup.
+                You can now sign in and complete your profile to access exclusive DSP resources and tools.
               </p>
               <div className="pt-4">
                 <Link to="/auth?portal=true">
