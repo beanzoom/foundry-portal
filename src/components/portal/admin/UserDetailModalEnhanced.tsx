@@ -115,14 +115,55 @@ export function UserDetailModalEnhanced({
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch user acquisition details
+      const { data: acquisitionData, error: acquisitionError } = await supabase
         .from('user_acquisition_details')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
-      setUser(data);
+      if (acquisitionError) throw acquisitionError;
+
+      // Fetch additional profile fields not in view
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          middle_name,
+          suffix,
+          preferred_name,
+          title,
+          bio,
+          website,
+          street1,
+          street2,
+          city,
+          state,
+          zip,
+          year_dsp_began,
+          avg_fleet_vehicles,
+          avg_drivers,
+          terms_accepted,
+          terms_accepted_at,
+          terms_version,
+          email_updates,
+          email_surveys,
+          email_events,
+          status,
+          last_sign_in_at
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (!profileError && profileData) {
+        // Merge acquisition data with extended profile data
+        setUser({
+          ...acquisitionData,
+          ...profileData,
+          last_sign_in_at: profileData.last_sign_in_at
+        });
+      } else {
+        setUser(acquisitionData);
+      }
     } catch (error) {
       console.error('Error fetching user:', error);
       toast({
@@ -250,9 +291,23 @@ export function UserDetailModalEnhanced({
                         <p className="text-sm">{user.first_name || '-'}</p>
                       </div>
                       <div>
+                        <label className="text-sm font-medium text-gray-500">Middle Name</label>
+                        <p className="text-sm">{user.middle_name || '-'}</p>
+                      </div>
+                      <div>
                         <label className="text-sm font-medium text-gray-500">Last Name</label>
                         <p className="text-sm">{user.last_name || '-'}</p>
                       </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Suffix</label>
+                        <p className="text-sm">{user.suffix || '-'}</p>
+                      </div>
+                      {user.preferred_name && (
+                        <div className="col-span-2">
+                          <label className="text-sm font-medium text-gray-500">Preferred Name</label>
+                          <p className="text-sm">{user.preferred_name}</p>
+                        </div>
+                      )}
                       <div>
                         <label className="text-sm font-medium text-gray-500">Email</label>
                         <div className="flex items-center gap-2">
@@ -267,16 +322,89 @@ export function UserDetailModalEnhanced({
                           <p className="text-sm">{user.phone || '-'}</p>
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div>
                         <label className="text-sm font-medium text-gray-500">Company</label>
                         <div className="flex items-center gap-2">
                           <Building className="h-4 w-4 text-gray-400" />
                           <p className="text-sm">{user.company_name || '-'}</p>
                         </div>
                       </div>
+                      {user.title && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Title</label>
+                          <p className="text-sm">{user.title}</p>
+                        </div>
+                      )}
+                      {user.website && (
+                        <div className="col-span-2">
+                          <label className="text-sm font-medium text-gray-500">Website</label>
+                          <p className="text-sm text-blue-600">{user.website}</p>
+                        </div>
+                      )}
+                      {user.bio && (
+                        <div className="col-span-2">
+                          <label className="text-sm font-medium text-gray-500">Bio</label>
+                          <p className="text-sm">{user.bio}</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Address Information */}
+                {(user.street1 || user.city || user.state || user.zip) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Building className="h-5 w-5" />
+                        Address
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {user.street1 && <p className="text-sm">{user.street1}</p>}
+                      {user.street2 && <p className="text-sm">{user.street2}</p>}
+                      {(user.city || user.state || user.zip) && (
+                        <p className="text-sm">
+                          {[user.city, user.state, user.zip].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Business Details */}
+                {(user.year_dsp_began || user.avg_fleet_vehicles || user.avg_drivers) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        Business Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-3 gap-4">
+                        {user.year_dsp_began && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">DSP Since</label>
+                            <p className="text-sm font-semibold">{user.year_dsp_began}</p>
+                          </div>
+                        )}
+                        {user.avg_fleet_vehicles && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Fleet Size</label>
+                            <p className="text-sm font-semibold">{user.avg_fleet_vehicles} vehicles</p>
+                          </div>
+                        )}
+                        {user.avg_drivers && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Drivers</label>
+                            <p className="text-sm font-semibold">{user.avg_drivers} drivers</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* DSP Assignment */}
                 {user.dsp_name && (
@@ -340,6 +468,14 @@ export function UserDetailModalEnhanced({
                         </div>
                       </div>
                       <div>
+                        <label className="text-sm font-medium text-gray-500">Account Status</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                            {user.status || 'active'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
                         <label className="text-sm font-medium text-gray-500">Member Since</label>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
@@ -348,7 +484,7 @@ export function UserDetailModalEnhanced({
                           </p>
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div>
                         <label className="text-sm font-medium text-gray-500">Last Sign In</label>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-400" />
@@ -359,9 +495,63 @@ export function UserDetailModalEnhanced({
                           </p>
                         </div>
                       </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Terms Accepted</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          {user.terms_accepted ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <span className="text-sm">
+                                {user.terms_accepted_at
+                                  ? format(new Date(user.terms_accepted_at), 'MMM d, yyyy')
+                                  : 'Yes'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="h-4 w-4 text-red-600" />
+                              <span className="text-sm">Not accepted</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Email Preferences */}
+                {(user.email_updates !== undefined || user.email_surveys !== undefined || user.email_events !== undefined) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Mail className="h-5 w-5" />
+                        Email Preferences
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Portal Updates</span>
+                          <Badge variant={user.email_updates ? 'default' : 'secondary'}>
+                            {user.email_updates ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Surveys</span>
+                          <Badge variant={user.email_surveys ? 'default' : 'secondary'}>
+                            {user.email_surveys ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Events</span>
+                          <Badge variant={user.email_events ? 'default' : 'secondary'}>
+                            {user.email_events ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Acquisition Tab */}

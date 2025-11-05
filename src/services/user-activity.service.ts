@@ -285,6 +285,30 @@ export async function fetchUserActivity(userId: string, options?: {
           });
         }
 
+        // NDA accepted (fetch from nda_agreements table)
+        const { data: ndaAgreements, error: ndaError } = await supabase
+          .from('nda_agreements')
+          .select('id, agreed_at, nda_version')
+          .eq('user_id', userId)
+          .order('agreed_at', { ascending: false })
+          .limit(1);
+
+        if (!ndaError && ndaAgreements && ndaAgreements.length > 0) {
+          const nda = ndaAgreements[0];
+          activities.push({
+            id: nda.id,
+            type: 'profile',
+            timestamp: nda.agreed_at,
+            title: 'NDA Accepted',
+            description: `User accepted NDA (version ${nda.nda_version})`,
+            status: 'completed',
+            metadata: {
+              event_type: 'nda_accepted',
+              nda_version: nda.nda_version
+            }
+          });
+        }
+
         // Terms accepted
         if (profile.terms_accepted_at) {
           activities.push({
